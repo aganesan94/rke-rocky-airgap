@@ -267,6 +267,9 @@ EOF
   echo -n "  - created airgap_hauler.yaml"
   info_ok
 
+  info "cat airgap_hauler.yaml | yq"
+  cat airgap_hauler.yaml | yq
+
   #  warn "- hauler store sync - will take some time..."
   #  hauler store sync -f /opt/hauler/airgap_hauler.yaml || { fatal "hauler failed to sync - check airgap_hauler.yaml for errors"; }
   #  echo -n "  - synced"
