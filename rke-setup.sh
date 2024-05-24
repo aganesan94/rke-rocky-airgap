@@ -19,9 +19,9 @@ export server=$2
 ######  NO MOAR EDITS #######
 # color
 export RED='\033[1;31m'
-export GREEN='\x1b[32m'
-export BLUE='\x1b[34m'
-export YELLOW='\x1b[33m'
+export GREEN='\033[1;92m'
+export BLUE='\033[1;94m'
+export YELLOW='\033[1;93m'
 export NO_COLOR='\033[0m'
 export RED='\033[1;31m'
 echo -e "I ${RED}love${NO_COLOR} Stack Overflow"
