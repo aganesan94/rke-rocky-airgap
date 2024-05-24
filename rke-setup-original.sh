@@ -62,143 +62,143 @@ function build () {
   info "checking for hauler / zstd / rsync / jq / helm"
 
   echo -e -n "checking rsync "
-#  command -v rsync > /dev/null 2>&1 || { echo -e -n "$RED" " ** rsync not found ** ""$NO_COLOR"; yum install rsync -y > /dev/null 2>&1; }
-#  info_ok
-#
-#  echo -e -n "checking zstd "
-#  command -v zstd > /dev/null 2>&1 || { echo -e -n "$RED" " ** zstd not found ** ""$NO_COLOR"; yum install zstd -y > /dev/null 2>&1; }
-#  info_ok
-#
-#  echo -e -n "checking helm "
-#  command -v helm > /dev/null 2>&1 || { echo -e -n "$RED" " ** helm was not found ** ""$NO_COLOR"; curl -s https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash  > /dev/null 2>&1; }
-#  info_ok
-#
-#  # get hauler if needed
-#  echo -e -n "checking hauler "
-#  command -v hauler >/dev/null 2>&1 || { echo -e -n "$RED" " ** hauler was not found ** ""$NO_COLOR"; curl -sfL https://get.hauler.dev | bash  > /dev/null 2>&1; }
-#  info_ok
-#
-#  # get jq if needed
-#  echo -e -n "checking jq "
-#  command -v jq >/dev/null 2>&1 || { echo -e -n "$RED" " ** jq was not found ** ""$NO_COLOR"; yum install epel-release -y  > /dev/null 2>&1; yum install -y jq > /dev/null 2>&1; }
-#  info_ok
-#
-#  cd /opt/hauler
-#
-#  info "creating hauler manifest"
-#  # versions
-#  export RKE_VERSION=$(curl -s https://update.rke2.io/v1-release/channels | jq -r '.data[] | select(.id=="stable") | .latest' | awk -F"+" '{print $1}'| sed 's/v//')
-#  export CERT_VERSION=$(curl -s https://api.github.com/repos/cert-manager/cert-manager/releases/latest | jq -r .tag_name)
-#  export RANCHER_VERSION=$(curl -s https://api.github.com/repos/rancher/rancher/releases/latest | jq -r .tag_name)
-#    # possible curl -s https://update.rancher.io/v1-release/channels | jq -r '.data[] | select(.id=="latest") .latest' | awk -F"+" '{print $1}'| sed 's/v//'
-#  export LONGHORN_VERSION=$(curl -s https://api.github.com/repos/longhorn/longhorn/releases/latest | jq -r .tag_name)
-#  export NEU_VERSION=$(curl -s https://api.github.com/repos/neuvector/neuvector-helm/releases/latest | jq -r .tag_name)
-#
-#  # temp dir
-#  mkdir -p hauler_temp
-#
-#  # repod
-#  helm repo add jetstack https://charts.jetstack.io --force-update > /dev/null 2>&1
-#  helm repo add longhorn https://charts.longhorn.io --force-update> /dev/null 2>&1
-#  helm repo add neuvector https://neuvector.github.io/neuvector-helm/ --force-update> /dev/null 2>&1
-#
-#  # images
-#cat << EOF > airgap_hauler.yaml
-#apiVersion: content.hauler.cattle.io/v1alpha1
-#kind: Images
-#metadata:
-#  name: rancher-images
-#  annotations:
-#  # hauler.dev/key: <cosign public key>
-#    hauler.dev/platform: linux/amd64
-#  # hauler.dev/registry: <registry>
-#spec:
-#  images:
-#EOF
-#
-#  for i in $(helm template jetstack/cert-manager --version $CERT_VERSION | awk '$1 ~ /image:/ {print $2}' | sed 's/\"//g'); do echo "    - name: "$i >> airgap_hauler.yaml; done
-#  for i in $(helm template neuvector/core --version $NEU_VERSION | awk '$1 ~ /image:/ {print $2}' | sed -e 's/\"//g'); do echo "    - name: "$i >> airgap_hauler.yaml; done
-#  for i in $(curl -sL https://github.com/longhorn/longhorn/releases/download/$LONGHORN_VERSION/longhorn-images.txt); do echo "    - name: "$i >> airgap_hauler.yaml; done
-#  for i in $(curl -sL https://github.com/rancher/rke2/releases/download/v$RKE_VERSION%2Brke2r1/rke2-images-all.linux-amd64.txt|grep -v "sriov\|cilium\|vsphere"); do echo "    - name: "$i >> airgap_hauler.yaml ; done
-#
-#  curl -sL https://github.com/rancher/rancher/releases/download/$RANCHER_VERSION/rancher-images.txt -o hauler_temp/orig-rancher-images.txt
-#  sed -E '/neuvector|minio|gke|aks|eks|sriov|harvester|mirrored|longhorn|thanos|tekton|istio|hyper|jenkins|windows/d' hauler_temp/orig-rancher-images.txt > hauler_temp/cleaned-rancher-images.txt
-#
-#  # capi fixes
-#  grep cluster-api hauler_temp/orig-rancher-images.txt >> hauler_temp/cleaned-rancher-images.txt
-#  grep kubectl hauler_temp/orig-rancher-images.txt >> hauler_temp/cleaned-rancher-images.txt
-#
-#  # get latest version
-#  for i in $(cat hauler_temp/cleaned-rancher-images.txt|awk -F: '{print $1}'); do
-#    grep -w "$i" hauler_temp/cleaned-rancher-images.txt | sort -Vr| head -1 >> hauler_temp/rancher-unsorted.txt
-#  done
-#
-#  # final sort
-#  sort -u hauler_temp/rancher-unsorted.txt > hauler_temp/rancher-images.txt
-#
-#  # kubectl fix
-#  echo "rancher/kubectl:v1.20.2" >> hauler_temp/rancher-images.txt
-#
-#  for i in $(cat hauler_temp/rancher-images.txt); do echo "    - name: "$i >> airgap_hauler.yaml; done
-#
-#  rm -rf hauler_temp
-#
-#cat << EOF >> airgap_hauler.yaml
-#---
-#apiVersion: content.hauler.cattle.io/v1alpha1
-#kind: Charts
-#metadata:
-#  name: rancher-charts
-#spec:
-#  charts:
-#    - name: rancher
-#      repoURL: https://releases.rancher.com/server-charts/latest
-#      version: $RANCHER_VERSION
-#    - name: cert-manager
-#      repoURL: https://charts.jetstack.io
-#      version: $CERT_VERSION
-#    - name: longhorn
-#      repoURL: https://charts.longhorn.io
-#      version: $LONGHORN_VERSION
-#    - name: core
-#      repoURL: https://neuvector.github.io/neuvector-helm/
-#      version: $NEU_VERSION
-#---
-#apiVersion: content.hauler.cattle.io/v1alpha1
-#kind: Files
-#metadata:
-#  name: rancher-files
-#spec:
-#  files:
-#    - path: https://github.com/rancher/rke2-packaging/releases/download/v$RKE_VERSION%2Brke2r1.stable.0/rke2-common-$RKE_VERSION.rke2r1-0.$EL.x86_64.rpm
-#    - path: https://github.com/rancher/rke2-packaging/releases/download/v$RKE_VERSION%2Brke2r1.stable.0/rke2-agent-$RKE_VERSION.rke2r1-0.$EL.x86_64.rpm
-#    - path: https://github.com/rancher/rke2-packaging/releases/download/v$RKE_VERSION%2Brke2r1.stable.0/rke2-server-$RKE_VERSION.rke2r1-0.$EL.x86_64.rpm
-#    - path: https://github.com/rancher/rke2-selinux/releases/download/v0.17.stable.1/rke2-selinux-0.17-1.$EL.noarch.rpm
-#    - path: https://get.helm.sh/helm-$(curl -s https://api.github.com/repos/helm/helm/releases/latest | jq -r .tag_name)-linux-amd64.tar.gz
-#    - path: https://raw.githubusercontent.com/clemenko/rke_airgap_install/main/rke-setup.sh
-#  # - path: https://download.rockylinux.org/pub/rocky/9/isos/x86_64/Rocky-9.3-x86_64-dvd.iso
-#EOF
-#
-#  echo -n "  - created airgap_hauler.yaml"; info_ok
-#
-#  warn "- hauler store sync - will take some time..."
-#  hauler store sync -f /opt/hauler/airgap_hauler.yaml || { fatal "hauler failed to sync - check airgap_hauler.yaml for errors" ; }
-#  echo -n "  - synced"; info_ok
-#
-#  # copy hauler binary
-#  rsync -avP /usr/local/bin/hauler /opt/hauler/hauler > /dev/null 2>&1
-#
-#  warn "- compressing all the things - will take a minute"
-#  tar -I zstd -cf /opt/hauler_airgap_$(date '+%m_%d_%y').zst $(ls) > /dev/null 2>&1
-#  echo -n "  - created /opt/hauler_airgap_$(date '+%m_%d_%y').zst "; info_ok
-#
-#  echo -e "---------------------------------------------------------------------------"
-#  echo -e $BLUE"    move file to other network..."
-#  echo -e $YELLOW"    then uncompress with : "$NO_COLOR
-#  echo -e "      mkdir /opt/hauler && yum install -y zstd"
-#  echo -e "      tar -I zstd -vxf hauler_airgap_$(date '+%m_%d_%y').zst -C /opt/hauler"
-#  echo -e "      $0 control"
-#  echo -e "---------------------------------------------------------------------------"
+  command -v rsync > /dev/null 2>&1 || { echo -e -n "$RED" " ** rsync not found ** ""$NO_COLOR"; yum install rsync -y > /dev/null 2>&1; }
+  info_ok
+
+  echo -e -n "checking zstd "
+  command -v zstd > /dev/null 2>&1 || { echo -e -n "$RED" " ** zstd not found ** ""$NO_COLOR"; yum install zstd -y > /dev/null 2>&1; }
+  info_ok
+
+  echo -e -n "checking helm "
+  command -v helm > /dev/null 2>&1 || { echo -e -n "$RED" " ** helm was not found ** ""$NO_COLOR"; curl -s https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash  > /dev/null 2>&1; }
+  info_ok
+
+  # get hauler if needed
+  echo -e -n "checking hauler "
+  command -v hauler >/dev/null 2>&1 || { echo -e -n "$RED" " ** hauler was not found ** ""$NO_COLOR"; curl -sfL https://get.hauler.dev | bash  > /dev/null 2>&1; }
+  info_ok
+
+  # get jq if needed
+  echo -e -n "checking jq "
+  command -v jq >/dev/null 2>&1 || { echo -e -n "$RED" " ** jq was not found ** ""$NO_COLOR"; yum install epel-release -y  > /dev/null 2>&1; yum install -y jq > /dev/null 2>&1; }
+  info_ok
+
+  cd /opt/hauler
+
+  info "creating hauler manifest"
+  # versions
+  export RKE_VERSION=$(curl -s https://update.rke2.io/v1-release/channels | jq -r '.data[] | select(.id=="stable") | .latest' | awk -F"+" '{print $1}'| sed 's/v//')
+  export CERT_VERSION=$(curl -s https://api.github.com/repos/cert-manager/cert-manager/releases/latest | jq -r .tag_name)
+  export RANCHER_VERSION=$(curl -s https://api.github.com/repos/rancher/rancher/releases/latest | jq -r .tag_name)
+    # possible curl -s https://update.rancher.io/v1-release/channels | jq -r '.data[] | select(.id=="latest") .latest' | awk -F"+" '{print $1}'| sed 's/v//'
+  export LONGHORN_VERSION=$(curl -s https://api.github.com/repos/longhorn/longhorn/releases/latest | jq -r .tag_name)
+  export NEU_VERSION=$(curl -s https://api.github.com/repos/neuvector/neuvector-helm/releases/latest | jq -r .tag_name)
+
+  # temp dir
+  mkdir -p hauler_temp
+
+  # repod
+  helm repo add jetstack https://charts.jetstack.io --force-update > /dev/null 2>&1
+  helm repo add longhorn https://charts.longhorn.io --force-update> /dev/null 2>&1
+  helm repo add neuvector https://neuvector.github.io/neuvector-helm/ --force-update> /dev/null 2>&1
+
+  # images
+cat << EOF > airgap_hauler.yaml
+apiVersion: content.hauler.cattle.io/v1alpha1
+kind: Images
+metadata:
+  name: rancher-images
+  annotations:
+  # hauler.dev/key: <cosign public key>
+    hauler.dev/platform: linux/amd64
+  # hauler.dev/registry: <registry>
+spec:       
+  images:
+EOF
+
+  for i in $(helm template jetstack/cert-manager --version $CERT_VERSION | awk '$1 ~ /image:/ {print $2}' | sed 's/\"//g'); do echo "    - name: "$i >> airgap_hauler.yaml; done
+  for i in $(helm template neuvector/core --version $NEU_VERSION | awk '$1 ~ /image:/ {print $2}' | sed -e 's/\"//g'); do echo "    - name: "$i >> airgap_hauler.yaml; done
+  for i in $(curl -sL https://github.com/longhorn/longhorn/releases/download/$LONGHORN_VERSION/longhorn-images.txt); do echo "    - name: "$i >> airgap_hauler.yaml; done
+  for i in $(curl -sL https://github.com/rancher/rke2/releases/download/v$RKE_VERSION%2Brke2r1/rke2-images-all.linux-amd64.txt|grep -v "sriov\|cilium\|vsphere"); do echo "    - name: "$i >> airgap_hauler.yaml ; done
+
+  curl -sL https://github.com/rancher/rancher/releases/download/$RANCHER_VERSION/rancher-images.txt -o hauler_temp/orig-rancher-images.txt
+  sed -E '/neuvector|minio|gke|aks|eks|sriov|harvester|mirrored|longhorn|thanos|tekton|istio|hyper|jenkins|windows/d' hauler_temp/orig-rancher-images.txt > hauler_temp/cleaned-rancher-images.txt
+
+  # capi fixes
+  grep cluster-api hauler_temp/orig-rancher-images.txt >> hauler_temp/cleaned-rancher-images.txt
+  grep kubectl hauler_temp/orig-rancher-images.txt >> hauler_temp/cleaned-rancher-images.txt
+    
+  # get latest version
+  for i in $(cat hauler_temp/cleaned-rancher-images.txt|awk -F: '{print $1}'); do 
+    grep -w "$i" hauler_temp/cleaned-rancher-images.txt | sort -Vr| head -1 >> hauler_temp/rancher-unsorted.txt
+  done
+
+  # final sort
+  sort -u hauler_temp/rancher-unsorted.txt > hauler_temp/rancher-images.txt
+
+  # kubectl fix
+  echo "rancher/kubectl:v1.20.2" >> hauler_temp/rancher-images.txt
+
+  for i in $(cat hauler_temp/rancher-images.txt); do echo "    - name: "$i >> airgap_hauler.yaml; done
+
+  rm -rf hauler_temp
+
+cat << EOF >> airgap_hauler.yaml
+---
+apiVersion: content.hauler.cattle.io/v1alpha1
+kind: Charts
+metadata:
+  name: rancher-charts
+spec:
+  charts:
+    - name: rancher
+      repoURL: https://releases.rancher.com/server-charts/latest
+      version: $RANCHER_VERSION
+    - name: cert-manager
+      repoURL: https://charts.jetstack.io
+      version: $CERT_VERSION
+    - name: longhorn
+      repoURL: https://charts.longhorn.io
+      version: $LONGHORN_VERSION
+    - name: core
+      repoURL: https://neuvector.github.io/neuvector-helm/
+      version: $NEU_VERSION
+---
+apiVersion: content.hauler.cattle.io/v1alpha1
+kind: Files
+metadata:
+  name: rancher-files
+spec:
+  files:
+    - path: https://github.com/rancher/rke2-packaging/releases/download/v$RKE_VERSION%2Brke2r1.stable.0/rke2-common-$RKE_VERSION.rke2r1-0.$EL.x86_64.rpm
+    - path: https://github.com/rancher/rke2-packaging/releases/download/v$RKE_VERSION%2Brke2r1.stable.0/rke2-agent-$RKE_VERSION.rke2r1-0.$EL.x86_64.rpm
+    - path: https://github.com/rancher/rke2-packaging/releases/download/v$RKE_VERSION%2Brke2r1.stable.0/rke2-server-$RKE_VERSION.rke2r1-0.$EL.x86_64.rpm
+    - path: https://github.com/rancher/rke2-selinux/releases/download/v0.17.stable.1/rke2-selinux-0.17-1.$EL.noarch.rpm
+    - path: https://get.helm.sh/helm-$(curl -s https://api.github.com/repos/helm/helm/releases/latest | jq -r .tag_name)-linux-amd64.tar.gz
+    - path: https://raw.githubusercontent.com/clemenko/rke_airgap_install/main/rke-setup.sh
+  # - path: https://download.rockylinux.org/pub/rocky/9/isos/x86_64/Rocky-9.3-x86_64-dvd.iso
+EOF
+
+  echo -n "  - created airgap_hauler.yaml"; info_ok
+
+  warn "- hauler store sync - will take some time..."
+  hauler store sync -f /opt/hauler/airgap_hauler.yaml || { fatal "hauler failed to sync - check airgap_hauler.yaml for errors" ; }
+  echo -n "  - synced"; info_ok
+  
+  # copy hauler binary
+  rsync -avP /usr/local/bin/hauler /opt/hauler/hauler > /dev/null 2>&1
+
+  warn "- compressing all the things - will take a minute"
+  tar -I zstd -cf /opt/hauler_airgap_$(date '+%m_%d_%y').zst $(ls) > /dev/null 2>&1
+  echo -n "  - created /opt/hauler_airgap_$(date '+%m_%d_%y').zst "; info_ok
+
+  echo -e "---------------------------------------------------------------------------"
+  echo -e $BLUE"    move file to other network..."
+  echo -e $YELLOW"    then uncompress with : "$NO_COLOR
+  echo -e "      mkdir /opt/hauler && yum install -y zstd"
+  echo -e "      tar -I zstd -vxf hauler_airgap_$(date '+%m_%d_%y').zst -C /opt/hauler"
+  echo -e "      $0 control"
+  echo -e "---------------------------------------------------------------------------"
 
 }
 
