@@ -327,14 +327,14 @@ EOF
 
     # start fileserver
     systemctl enable --now hauler@fileserver >/dev/null 2>&1 || fatal "hauler fileserver did not start"
-    echo -n " - fileserver started"
+    info " - fileserver started"
     info_ok
 
     sleep 5
 
     # start reg
     systemctl enable --now hauler@registry >/dev/null 2>&1 || fatal "hauler registry did not start"
-    echo -n " - registry started"
+    info " - registry started"
     info_ok
 
     sleep 5
@@ -615,7 +615,7 @@ case "$1" in
 build) build ;;
 #control) deploy_control ;;
 #worker) deploy_worker ;;
-#serve) hauler_setup ;;
+serve) hauler_setup ;;
 #neuvector) neuvector ;;
 #longhorn) longhorn ;;
 #rancher) rancher ;;
