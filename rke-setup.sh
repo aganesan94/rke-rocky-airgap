@@ -29,13 +29,15 @@ function info {
   echo -e "${GREEN}[info] $1"
 }
 function warn {
-  echo -e "${YELLOW}[$(date)-$FILE_NAME: warn]$1"
+  echo -e "${YELLOW}[warn]$1"
 }
 function fatal {
-  echo -e "${RED}[$(date)-$FILE_NAME: error]$1"
+  echo -e "${RED}[error]$1"
   exit 1
 }
-function info_ok { echo -e "${GREEN}" "ok"; }
+function info_ok {
+  echo -e "${GREEN}" "ok";
+}
 
 export PATH=$PATH:/usr/local/bin
 
