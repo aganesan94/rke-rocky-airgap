@@ -227,7 +227,7 @@ function build() {
   updateAirGapHaulerFromRancher
 
   rm -rf tmp
-  echo "\n" | tee -a airgap_hauler.yaml
+  printf "\n" | tee -a airgap_hauler.yaml
   cat <<EOF >>airgap_hauler.yaml
 ---
 apiVersion: content.hauler.cattle.io/v1alpha1
