@@ -102,6 +102,15 @@ function build() {
   }
   info_ok
 
+  # get jq if needed
+  echo -e -n "checking yq "
+  command -v yq >/dev/null 2>&1 || {
+    echo -e -n "$RED" " ** yq was not found ** ""$NO_COLOR"
+    wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq &&\
+    chmod +x /usr/bin/yq
+  }
+  info_ok
+
   # versions
   export RKE_VERSION=$(curl -s https://update.rke2.io/v1-release/channels | jq -r '.data[] | select(.id=="stable") | .latest' | awk -F"+" '{print $1}' | sed 's/v//')
   export CERT_VERSION=$(curl -s https://api.github.com/repos/cert-manager/cert-manager/releases/latest | jq -r .tag_name)
