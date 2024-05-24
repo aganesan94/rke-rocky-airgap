@@ -25,26 +25,29 @@ export YELLOW='\x1b[33m'
 export NO_COLOR='\x1b[0m'
 
 # set functions for debugging/logging
-function info { echo -e "$GREEN[info]$NO_COLOR $1" ;  }
-function warn { echo -e "$YELLOW[warn]$NO_COLOR $1" ; }
-function fatal { echo -e "$RED[error]$NO_COLOR $1" ; exit 1 ; }
-function info_ok { echo -e "$GREEN" "ok" "$NO_COLOR" ; }
+function info { echo -e "$GREEN[info]$NO_COLOR $1"; }
+function warn { echo -e "$YELLOW[warn]$NO_COLOR $1"; }
+function fatal {
+  echo -e "$RED[error]$NO_COLOR $1"
+  exit 1
+}
+function info_ok { echo -e "$GREEN" "ok" "$NO_COLOR"; }
 
 export PATH=$PATH:/usr/local/bin
 
 # el version
-export EL_ver=  #set to el8 or el9 or the script will figure it out
-if which rpm > /dev/null 2>&1 ; then export EL=${EL_ver:-$(rpm -q --queryformat '%{RELEASE}' rpm | grep -o "el[[:digit:]]" )} ; fi
+export EL_ver= #set to el8 or el9 or the script will figure it out
+if which rpm >/dev/null 2>&1; then export EL=${EL_ver:-$(rpm -q --queryformat '%{RELEASE}' rpm | grep -o "el[[:digit:]]")}; fi
 
 # Fetch hostname from server
-if [ "$1" != "build" ] && [ $(uname) != "Darwin" ] ; then export serverIp=${server:-$(hostname -I | awk '{ print $1 }')} ; fi
+if [ "$1" != "build" ] && [ $(uname) != "Darwin" ]; then export serverIp=${server:-$(hostname -I | awk '{ print $1 }')}; fi
 
 # To ensure it is run as root
-if [ $(whoami) != "root" ] && ([ "$1" = "control" ] || [ "$1" = "worker" ] || [ "$1" = "serve" ] || [ "$1" = "neuvector" ] || [ "$1" = "longhorn" ] || [ "$1" = "rancher" ] || [ "$1" = "validate" ] || [ "$1" = "flask" ])  ; then fatal "please run $0 as root"; fi
+if [ $(whoami) != "root" ] && ([ "$1" = "control" ] || [ "$1" = "worker" ] || [ "$1" = "serve" ] || [ "$1" = "neuvector" ] || [ "$1" = "longhorn" ] || [ "$1" = "rancher" ] || [ "$1" = "validate" ] || [ "$1" = "flask" ]); then fatal "please run $0 as root"; fi
 
 if [[ -z $DOMAIN ]]; then
   echo "$(date)-$FILE_NAME: Please specify a DOMAIN, refer variable"
-   exit 1
+  exit 1
 fi
 
 #if [[ -z $server ]]; then
@@ -57,40 +60,56 @@ echo "$(date)-$FILE_NAME: server=$server"
 echo "$(date)-$FILE_NAME: CURR_USER=$(whoami)"
 
 ################################# build ################################
-function build () {
+function build() {
 
   info "checking for hauler / zstd / rsync / jq / helm"
 
   echo -e -n "checking rsync "
-  command -v rsync > /dev/null 2>&1 || { echo -e -n "$RED" " ** rsync not found ** ""$NO_COLOR"; yum install rsync -y > /dev/null 2>&1; }
+  command -v rsync >/dev/null 2>&1 || {
+    echo -e -n "$RED" " ** rsync not found ** ""$NO_COLOR"
+    yum install rsync -y >/dev/null 2>&1
+  }
   info_ok
 
   echo -e -n "checking zstd "
-  command -v zstd > /dev/null 2>&1 || { echo -e -n "$RED" " ** zstd not found ** ""$NO_COLOR"; yum install zstd -y > /dev/null 2>&1; }
+  command -v zstd >/dev/null 2>&1 || {
+    echo -e -n "$RED" " ** zstd not found ** ""$NO_COLOR"
+    yum install zstd -y >/dev/null 2>&1
+  }
   info_ok
 
   echo -e -n "checking helm "
-  command -v helm > /dev/null 2>&1 || { echo -e -n "$RED" " ** helm was not found ** ""$NO_COLOR"; curl -s https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash  > /dev/null 2>&1; }
+  command -v helm >/dev/null 2>&1 || {
+    echo -e -n "$RED" " ** helm was not found ** ""$NO_COLOR"
+    curl -s https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash >/dev/null 2>&1
+  }
   info_ok
 
   # get hauler if needed
   echo -e -n "checking hauler "
-  command -v hauler >/dev/null 2>&1 || { echo -e -n "$RED" " ** hauler was not found ** ""$NO_COLOR"; curl -sfL https://get.hauler.dev | bash  > /dev/null 2>&1; }
+  command -v hauler >/dev/null 2>&1 || {
+    echo -e -n "$RED" " ** hauler was not found ** ""$NO_COLOR"
+    curl -sfL https://get.hauler.dev | bash >/dev/null 2>&1
+  }
   info_ok
 
   # get jq if needed
   echo -e -n "checking jq "
-  command -v jq >/dev/null 2>&1 || { echo -e -n "$RED" " ** jq was not found ** ""$NO_COLOR"; yum install epel-release -y  > /dev/null 2>&1; yum install -y jq > /dev/null 2>&1; }
+  command -v jq >/dev/null 2>&1 || {
+    echo -e -n "$RED" " ** jq was not found ** ""$NO_COLOR"
+    yum install epel-release -y >/dev/null 2>&1
+    yum install -y jq >/dev/null 2>&1
+  }
   info_ok
 
   cd /opt/hauler
 
   info "creating hauler manifest"
   # versions
-  export RKE_VERSION=$(curl -s https://update.rke2.io/v1-release/channels | jq -r '.data[] | select(.id=="stable") | .latest' | awk -F"+" '{print $1}'| sed 's/v//')
+  export RKE_VERSION=$(curl -s https://update.rke2.io/v1-release/channels | jq -r '.data[] | select(.id=="stable") | .latest' | awk -F"+" '{print $1}' | sed 's/v//')
   export CERT_VERSION=$(curl -s https://api.github.com/repos/cert-manager/cert-manager/releases/latest | jq -r .tag_name)
   export RANCHER_VERSION=$(curl -s https://api.github.com/repos/rancher/rancher/releases/latest | jq -r .tag_name)
-    # possible curl -s https://update.rancher.io/v1-release/channels | jq -r '.data[] | select(.id=="latest") .latest' | awk -F"+" '{print $1}'| sed 's/v//'
+  # possible curl -s https://update.rancher.io/v1-release/channels | jq -r '.data[] | select(.id=="latest") .latest' | awk -F"+" '{print $1}'| sed 's/v//'
   export LONGHORN_VERSION=$(curl -s https://api.github.com/repos/longhorn/longhorn/releases/latest | jq -r .tag_name)
   export NEU_VERSION=$(curl -s https://api.github.com/repos/neuvector/neuvector-helm/releases/latest | jq -r .tag_name)
 
@@ -98,12 +117,12 @@ function build () {
   mkdir -p hauler_temp
 
   # repod
-  helm repo add jetstack https://charts.jetstack.io --force-update > /dev/null 2>&1
-  helm repo add longhorn https://charts.longhorn.io --force-update> /dev/null 2>&1
-  helm repo add neuvector https://neuvector.github.io/neuvector-helm/ --force-update> /dev/null 2>&1
+  helm repo add jetstack https://charts.jetstack.io --force-update >/dev/null 2>&1
+  helm repo add longhorn https://charts.longhorn.io --force-update >/dev/null 2>&1
+  helm repo add neuvector https://neuvector.github.io/neuvector-helm/ --force-update >/dev/null 2>&1
 
   # images
-cat << EOF > airgap_hauler.yaml
+  cat <<EOF >airgap_hauler.yaml
 apiVersion: content.hauler.cattle.io/v1alpha1
 kind: Images
 metadata:
@@ -116,34 +135,34 @@ spec:
   images:
 EOF
 
-  for i in $(helm template jetstack/cert-manager --version $CERT_VERSION | awk '$1 ~ /image:/ {print $2}' | sed 's/\"//g'); do echo "    - name: "$i >> airgap_hauler.yaml; done
-  for i in $(helm template neuvector/core --version $NEU_VERSION | awk '$1 ~ /image:/ {print $2}' | sed -e 's/\"//g'); do echo "    - name: "$i >> airgap_hauler.yaml; done
-  for i in $(curl -sL https://github.com/longhorn/longhorn/releases/download/$LONGHORN_VERSION/longhorn-images.txt); do echo "    - name: "$i >> airgap_hauler.yaml; done
-  for i in $(curl -sL https://github.com/rancher/rke2/releases/download/v$RKE_VERSION%2Brke2r1/rke2-images-all.linux-amd64.txt|grep -v "sriov\|cilium\|vsphere"); do echo "    - name: "$i >> airgap_hauler.yaml ; done
+  for i in $(helm template jetstack/cert-manager --version $CERT_VERSION | awk '$1 ~ /image:/ {print $2}' | sed 's/\"//g'); do echo "    - name: "$i >>airgap_hauler.yaml; done
+  for i in $(helm template neuvector/core --version $NEU_VERSION | awk '$1 ~ /image:/ {print $2}' | sed -e 's/\"//g'); do echo "    - name: "$i >>airgap_hauler.yaml; done
+  for i in $(curl -sL https://github.com/longhorn/longhorn/releases/download/$LONGHORN_VERSION/longhorn-images.txt); do echo "    - name: "$i >>airgap_hauler.yaml; done
+  for i in $(curl -sL https://github.com/rancher/rke2/releases/download/v$RKE_VERSION%2Brke2r1/rke2-images-all.linux-amd64.txt | grep -v "sriov\|cilium\|vsphere"); do echo "    - name: "$i >>airgap_hauler.yaml; done
 
   curl -sL https://github.com/rancher/rancher/releases/download/$RANCHER_VERSION/rancher-images.txt -o hauler_temp/orig-rancher-images.txt
-  sed -E '/neuvector|minio|gke|aks|eks|sriov|harvester|mirrored|longhorn|thanos|tekton|istio|hyper|jenkins|windows/d' hauler_temp/orig-rancher-images.txt > hauler_temp/cleaned-rancher-images.txt
+  sed -E '/neuvector|minio|gke|aks|eks|sriov|harvester|mirrored|longhorn|thanos|tekton|istio|hyper|jenkins|windows/d' hauler_temp/orig-rancher-images.txt >hauler_temp/cleaned-rancher-images.txt
 
   # capi fixes
-  grep cluster-api hauler_temp/orig-rancher-images.txt >> hauler_temp/cleaned-rancher-images.txt
-  grep kubectl hauler_temp/orig-rancher-images.txt >> hauler_temp/cleaned-rancher-images.txt
-    
+  grep cluster-api hauler_temp/orig-rancher-images.txt >>hauler_temp/cleaned-rancher-images.txt
+  grep kubectl hauler_temp/orig-rancher-images.txt >>hauler_temp/cleaned-rancher-images.txt
+
   # get latest version
-  for i in $(cat hauler_temp/cleaned-rancher-images.txt|awk -F: '{print $1}'); do 
-    grep -w "$i" hauler_temp/cleaned-rancher-images.txt | sort -Vr| head -1 >> hauler_temp/rancher-unsorted.txt
+  for i in $(cat hauler_temp/cleaned-rancher-images.txt | awk -F: '{print $1}'); do
+    grep -w "$i" hauler_temp/cleaned-rancher-images.txt | sort -Vr | head -1 >>hauler_temp/rancher-unsorted.txt
   done
 
   # final sort
-  sort -u hauler_temp/rancher-unsorted.txt > hauler_temp/rancher-images.txt
+  sort -u hauler_temp/rancher-unsorted.txt >hauler_temp/rancher-images.txt
 
   # kubectl fix
-  echo "rancher/kubectl:v1.20.2" >> hauler_temp/rancher-images.txt
+  echo "rancher/kubectl:v1.20.2" >>hauler_temp/rancher-images.txt
 
-  for i in $(cat hauler_temp/rancher-images.txt); do echo "    - name: "$i >> airgap_hauler.yaml; done
+  for i in $(cat hauler_temp/rancher-images.txt); do echo "    - name: "$i >>airgap_hauler.yaml; done
 
   rm -rf hauler_temp
 
-cat << EOF >> airgap_hauler.yaml
+  cat <<EOF >>airgap_hauler.yaml
 ---
 apiVersion: content.hauler.cattle.io/v1alpha1
 kind: Charts
@@ -179,18 +198,21 @@ spec:
   # - path: https://download.rockylinux.org/pub/rocky/9/isos/x86_64/Rocky-9.3-x86_64-dvd.iso
 EOF
 
-  echo -n "  - created airgap_hauler.yaml"; info_ok
+  echo -n "  - created airgap_hauler.yaml"
+  info_ok
 
   warn "- hauler store sync - will take some time..."
-  hauler store sync -f /opt/hauler/airgap_hauler.yaml || { fatal "hauler failed to sync - check airgap_hauler.yaml for errors" ; }
-  echo -n "  - synced"; info_ok
-  
+  hauler store sync -f /opt/hauler/airgap_hauler.yaml || { fatal "hauler failed to sync - check airgap_hauler.yaml for errors"; }
+  echo -n "  - synced"
+  info_ok
+
   # copy hauler binary
-  rsync -avP /usr/local/bin/hauler /opt/hauler/hauler > /dev/null 2>&1
+  rsync -avP /usr/local/bin/hauler /opt/hauler/hauler >/dev/null 2>&1
 
   warn "- compressing all the things - will take a minute"
-  tar -I zstd -cf /opt/hauler_airgap_$(date '+%m_%d_%y').zst $(ls) > /dev/null 2>&1
-  echo -n "  - created /opt/hauler_airgap_$(date '+%m_%d_%y').zst "; info_ok
+  tar -I zstd -cf /opt/hauler_airgap_$(date '+%m_%d_%y').zst $(ls) >/dev/null 2>&1
+  echo -n "  - created /opt/hauler_airgap_$(date '+%m_%d_%y').zst "
+  info_ok
 
   echo -e "---------------------------------------------------------------------------"
   echo -e $BLUE"    move file to other network..."
@@ -203,22 +225,21 @@ EOF
 }
 
 ################################# hauler_setup ################################
-function hauler_setup () {
+function hauler_setup() {
 
-# make sure it is not running
-if [ $(ss -tln | grep "8080\|5000" | wc -l) != 2 ]; then
+  # make sure it is not running
+  if [ $(ss -tln | grep "8080\|5000" | wc -l) != 2 ]; then
 
+    info "setting up hauler"
 
-  info "setting up hauler"
+    # install
+    if [ ! -f /usr/local/bin/hauler ]; then install -m 755 hauler /usr/local/bin || fatal "Failed to Install Hauler to /usr/local/bin"; fi
 
-  # install
-  if [ ! -f /usr/local/bin/hauler ]; then  install -m 755 hauler /usr/local/bin || fatal "Failed to Install Hauler to /usr/local/bin" ; fi
+    # load
+    #  hauler store load /opt/hauler/haul.tar.zst || fatal "Failed to load hauler store"
 
-  # load
-#  hauler store load /opt/hauler/haul.tar.zst || fatal "Failed to load hauler store"
-
-  # add systemd file
-cat << EOF > /etc/systemd/system/hauler@.service
+    # add systemd file
+    cat <<EOF >/etc/systemd/system/hauler@.service
 # /etc/systemd/system/hauler.service
 [Unit]
 Description=Hauler Serve %I Service
@@ -232,35 +253,37 @@ WorkingDirectory=/opt/hauler
 WantedBy=multi-user.target
 EOF
 
-  #reload daemon
-  systemctl daemon-reload
+    #reload daemon
+    systemctl daemon-reload
 
-  # start fileserver
-  systemctl enable --now hauler@fileserver > /dev/null 2>&1 || fatal "hauler fileserver did not start"
-  echo -n " - fileserver started"; info_ok
+    # start fileserver
+    systemctl enable --now hauler@fileserver >/dev/null 2>&1 || fatal "hauler fileserver did not start"
+    echo -n " - fileserver started"
+    info_ok
 
-  sleep 5
+    sleep 5
 
-  # start reg
-  systemctl enable --now hauler@registry > /dev/null 2>&1 || fatal "hauler registry did not start"
-  echo -n " - registry started"; info_ok
+    # start reg
+    systemctl enable --now hauler@registry >/dev/null 2>&1 || fatal "hauler registry did not start"
+    echo -n " - registry started"
+    info_ok
 
-  sleep 5
+    sleep 5
 
-  # wait for fileserver to come up.
-  until [ $(ls -1 /opt/hauler/fileserver/ | grep rpm | wc -l) == 4 ]; do sleep 2; done
- 
-  until hauler store info > /dev/null 2>&1; do sleep 5; done 
+    # wait for fileserver to come up.
+    until [ $(ls -1 /opt/hauler/fileserver/ | grep rpm | wc -l) == 4 ]; do sleep 2; done
 
-  # generate an index file
-  hauler store info > /opt/hauler/fileserver/_hauler_index.txt || fatal "hauler store is having issues - check /opt/hauler/fileserver/_hauler_index.txt"
+    until hauler store info >/dev/null 2>&1; do sleep 5; done
 
-  # add dvd iso
-  # mkdir -p /opt/hauler/fileserver/dvd
-  # mount -o loop Rocky-8.9-x86_64-dvd1.iso /opt/fileserver/dvd
+    # generate an index file
+    hauler store info >/opt/hauler/fileserver/_hauler_index.txt || fatal "hauler store is having issues - check /opt/hauler/fileserver/_hauler_index.txt"
 
-  # create yum repo file
-  cat << EOF > /opt/hauler/fileserver/hauler.repo
+    # add dvd iso
+    # mkdir -p /opt/hauler/fileserver/dvd
+    # mount -o loop Rocky-8.9-x86_64-dvd1.iso /opt/fileserver/dvd
+
+    # create yum repo file
+    cat <<EOF >/opt/hauler/fileserver/hauler.repo
 [hauler]
 name=Hauler Air Gap Server
 baseurl=http://$serverIp:8080
@@ -268,34 +291,34 @@ enabled=1
 gpgcheck=0
 EOF
 
-# add for dvd support
-#[rocky-dvd-base]
-#name=Rocky DVD BaseOS
-#baseurl=http://$serverIp:8080/dvd/BaseOS/
-#enabled=1
-#gpgcheck=0
-#[rocky-dvd-app]
-#name=Rocky DVD AppStream
-#baseurl=http://$serverIp:8080/dvd/AppStream/
-#enabled=1
-#gpgcheck=0
+    # add for dvd support
+    #[rocky-dvd-base]
+    #name=Rocky DVD BaseOS
+    #baseurl=http://$serverIp:8080/dvd/BaseOS/
+    #enabled=1
+    #gpgcheck=0
+    #[rocky-dvd-app]
+    #name=Rocky DVD AppStream
+    #baseurl=http://$serverIp:8080/dvd/AppStream/
+    #enabled=1
+    #gpgcheck=0
 
-  # install createrepo
-  yum install -y createrepo  > /dev/null 2>&1 || fatal "creaerepo was not installed, please install"
+    # install createrepo
+    yum install -y createrepo >/dev/null 2>&1 || fatal "creaerepo was not installed, please install"
 
-  # create repo for rancher rpms
-  createrepo /opt/hauler/fileserver > /dev/null 2>&1
+    # create repo for rancher rpms
+    createrepo /opt/hauler/fileserver >/dev/null 2>&1
 
-fi
+  fi
 
 }
 
 ################################# base ################################
-function base () {
+function base() {
 
   # install all the base bits.
   info "updating kernel settings"
-  cat << EOF > /etc/sysctl.conf
+  cat <<EOF >/etc/sysctl.conf
 # SWAP settings
 vm.swappiness=0
 vm.panic_on_oom=0
@@ -345,32 +368,32 @@ net.ipv4.ip_forward=1
 fs.inotify.max_user_instances=8192
 fs.inotify.max_user_watches=1048576
 EOF
-sysctl -p > /dev/null 2>&1
+  sysctl -p >/dev/null 2>&1
 
   # disable firewalld
-  if yum list installed firewalld > /dev/null 2>&1; then 
-    yum remove -y firewalld > /dev/null 2>&1 || fatal "firewalld could not be disabled"
+  if yum list installed firewalld >/dev/null 2>&1; then
+    yum remove -y firewalld >/dev/null 2>&1 || fatal "firewalld could not be disabled"
     warn "firewalld was removed"
   else
     info "firewalld not installed"
   fi
 
   info "installing base packages"
-  yum install -y zstd iptables container-selinux iptables libnetfilter_conntrack libnfnetlink libnftnl policycoreutils-python-utils cryptsetup iscsi-initiator-utils > /dev/null 2>&1 || fatal "iptables container-selinux iptables libnetfilter_conntrack libnfnetlink libnftnl policycoreutils-python-utils cryptsetup iscsi-initiator-utils packages didn't install"
-  systemctl enable --now iscsid > /dev/null 2>&1
-  echo -e "[keyfile]\nunmanaged-devices=interface-name:cali*;interface-name:flannel*" > /etc/NetworkManager/conf.d/rke2-canal.conf
+  yum install -y zstd iptables container-selinux iptables libnetfilter_conntrack libnfnetlink libnftnl policycoreutils-python-utils cryptsetup iscsi-initiator-utils >/dev/null 2>&1 || fatal "iptables container-selinux iptables libnetfilter_conntrack libnfnetlink libnftnl policycoreutils-python-utils cryptsetup iscsi-initiator-utils packages didn't install"
+  systemctl enable --now iscsid >/dev/null 2>&1
+  echo -e "[keyfile]\nunmanaged-devices=interface-name:cali*;interface-name:flannel*" >/etc/NetworkManager/conf.d/rke2-canal.conf
 
   info "adding yum repo"
-    # add repo 
+  # add repo
   curl -sfL http://$serverIp:8080/hauler.repo -o /etc/yum.repos.d/hauler.repo
 
   # clean all the yums
-  yum clean all  > /dev/null 2>&1
+  yum clean all >/dev/null 2>&1
 
 }
 
 ################################# deploy control ################################
-function deploy_control () {
+function deploy_control() {
   # this is for the first node
 
   # set up hauler services
@@ -382,39 +405,39 @@ function deploy_control () {
   info "installing rke2"
 
   # add etcd user
-  if ! grep etcd /etc/passwd > /dev/null 2>&1 ; then useradd -r -c "etcd user" -s /sbin/nologin -M etcd -U ; fi 
-  
+  if ! grep etcd /etc/passwd >/dev/null 2>&1; then useradd -r -c "etcd user" -s /sbin/nologin -M etcd -U; fi
+
   # create stig config files
   mkdir -p /etc/rancher/rke2/ /var/lib/rancher/rke2/server/manifests/ /var/lib/rancher/rke2/agent/images
-  echo -e "#profile: cis-1.23\nselinux: true\nsecrets-encryption: true\ntoken: bootstrapAllTheThings\nwrite-kubeconfig-mode: 0600\nkube-controller-manager-arg:\n- bind-address=127.0.0.1\n- use-service-account-credentials=true\n- tls-min-version=VersionTLS12\n- tls-cipher-suites=TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384\nkube-scheduler-arg:\n- tls-min-version=VersionTLS12\n- tls-cipher-suites=TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384\nkube-apiserver-arg:\n- tls-min-version=VersionTLS12\n- tls-cipher-suites=TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384\n- authorization-mode=RBAC,Node\n- anonymous-auth=false\n- audit-policy-file=/etc/rancher/rke2/audit-policy.yaml\n- audit-log-mode=blocking-strict\n- audit-log-maxage=30\nkubelet-arg:\n- protect-kernel-defaults=true\n- read-only-port=0\n- authorization-mode=Webhook" > /etc/rancher/rke2/config.yaml
+  echo -e "#profile: cis-1.23\nselinux: true\nsecrets-encryption: true\ntoken: bootstrapAllTheThings\nwrite-kubeconfig-mode: 0600\nkube-controller-manager-arg:\n- bind-address=127.0.0.1\n- use-service-account-credentials=true\n- tls-min-version=VersionTLS12\n- tls-cipher-suites=TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384\nkube-scheduler-arg:\n- tls-min-version=VersionTLS12\n- tls-cipher-suites=TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384\nkube-apiserver-arg:\n- tls-min-version=VersionTLS12\n- tls-cipher-suites=TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305,TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384\n- authorization-mode=RBAC,Node\n- anonymous-auth=false\n- audit-policy-file=/etc/rancher/rke2/audit-policy.yaml\n- audit-log-mode=blocking-strict\n- audit-log-maxage=30\nkubelet-arg:\n- protect-kernel-defaults=true\n- read-only-port=0\n- authorization-mode=Webhook" >/etc/rancher/rke2/config.yaml
 
   # set up audit policy file
-  echo -e "apiVersion: audit.k8s.io/v1\nkind: Policy\nmetadata:\n  name: rke2-audit-policy\nrules:\n  - level: Metadata\n    resources:\n    - group: \"\"\n      resources: [\"secrets\"]\n  - level: RequestResponse\n    resources:\n    - group: \"\"\n      resources: [\"*\"]" > /etc/rancher/rke2/audit-policy.yaml
+  echo -e "apiVersion: audit.k8s.io/v1\nkind: Policy\nmetadata:\n  name: rke2-audit-policy\nrules:\n  - level: Metadata\n    resources:\n    - group: \"\"\n      resources: [\"secrets\"]\n  - level: RequestResponse\n    resources:\n    - group: \"\"\n      resources: [\"*\"]" >/etc/rancher/rke2/audit-policy.yaml
 
   # set up ssl passthrough for nginx
-  echo -e "---\napiVersion: helm.cattle.io/v1\nkind: HelmChartConfig\nmetadata:\n  name: rke2-ingress-nginx\n  namespace: kube-system\nspec:\n  valuesContent: |-\n    controller:\n      config:\n        use-forwarded-headers: true\n      extraArgs:\n        enable-ssl-passthrough: true" > /var/lib/rancher/rke2/server/manifests/rke2-ingress-nginx-config.yaml
+  echo -e "---\napiVersion: helm.cattle.io/v1\nkind: HelmChartConfig\nmetadata:\n  name: rke2-ingress-nginx\n  namespace: kube-system\nspec:\n  valuesContent: |-\n    controller:\n      config:\n        use-forwarded-headers: true\n      extraArgs:\n        enable-ssl-passthrough: true" >/var/lib/rancher/rke2/server/manifests/rke2-ingress-nginx-config.yaml
 
   # set registry override
-  echo -e "mirrors:\n  docker.io:\n    endpoint:\n      - http://$serverIp:5000\n  $serverIp:5000:\n    endpoint:\n      - http://$serverIp:5000" > /etc/rancher/rke2/registries.yaml
+  echo -e "mirrors:\n  docker.io:\n    endpoint:\n      - http://$serverIp:5000\n  $serverIp:5000:\n    endpoint:\n      - http://$serverIp:5000" >/etc/rancher/rke2/registries.yaml
 
   # insall rke2 - stig'd
-  yum install -y rke2-server rke2-common rke2-selinux > /dev/null 2>&1 || fatal "yum install rke2 packages didn't work. check the hauler fileserver service."
-  systemctl enable --now rke2-server.service > /dev/null 2>&1 || fatal "rke2-server didn't start"
+  yum install -y rke2-server rke2-common rke2-selinux >/dev/null 2>&1 || fatal "yum install rke2 packages didn't work. check the hauler fileserver service."
+  systemctl enable --now rke2-server.service >/dev/null 2>&1 || fatal "rke2-server didn't start"
 
   until systemctl is-active -q rke2-server; do sleep 2; done
 
   # wait and add link
-  echo "export KUBECONFIG=/etc/rancher/rke2/rke2.yaml PATH=$PATH:/usr/local/bin/:/var/lib/rancher/rke2/bin/" >> ~/.bashrc
+  echo "export KUBECONFIG=/etc/rancher/rke2/rke2.yaml PATH=$PATH:/usr/local/bin/:/var/lib/rancher/rke2/bin/" >>~/.bashrc
   source ~/.bashrc
 
   # wait for cluster to be active
   until [ $(kubectl get node | grep Ready | wc -l) == 1 ]; do sleep 2; done
   info "cluster active"
 
-  # install helm 
+  # install helm
   info "installing helm"
   cd /opt/hauler
-  curl -sfL http://$serverIp:8080/$(curl -sfL http://$serverIp:8080/ | grep helm | sed -e 's/<[^>]*>//g') | tar -zxvf - > /dev/null 2>&1
+  curl -sfL http://$serverIp:8080/$(curl -sfL http://$serverIp:8080/ | grep helm | sed -e 's/<[^>]*>//g') | tar -zxvf - >/dev/null 2>&1
   install -m 755 linux-amd64/helm /usr/local/bin || fatal "Failed to install helm to /usr/local/bin"
 
   echo "------------------------------------------------------------------------------------"
@@ -425,7 +448,7 @@ function deploy_control () {
 }
 
 ################################# deploy worker ################################
-function deploy_worker () {
+function deploy_worker() {
   echo - deploy worker
 
   # base bits
@@ -433,36 +456,36 @@ function deploy_worker () {
 
   # setup RKE2
   mkdir -p /etc/rancher/rke2/
-  echo -e "server: https://$serverIp:9345\ntoken: bootstrapAllTheThings\nwrite-kubeconfig-mode: 0600\n#profile: cis-1.23\nkube-apiserver-arg:\n- \"authorization-mode=RBAC,Node\"\nkubelet-arg:\n- \"protect-kernel-defaults=true\" " > /etc/rancher/rke2/config.yaml
-  
+  echo -e "server: https://$serverIp:9345\ntoken: bootstrapAllTheThings\nwrite-kubeconfig-mode: 0600\n#profile: cis-1.23\nkube-apiserver-arg:\n- \"authorization-mode=RBAC,Node\"\nkubelet-arg:\n- \"protect-kernel-defaults=true\" " >/etc/rancher/rke2/config.yaml
+
   # set registry override
-  echo -e "mirrors:\n  docker.io:\n    endpoint:\n      - http://$serverIp:5000\n  \"$serverIp:5000\":\n    endpoint:\n      - http://$serverIp:5000" > /etc/rancher/rke2/registries.yaml
+  echo -e "mirrors:\n  docker.io:\n    endpoint:\n      - http://$serverIp:5000\n  \"$serverIp:5000\":\n    endpoint:\n      - http://$serverIp:5000" >/etc/rancher/rke2/registries.yaml
 
   # install rke2
-  yum install -y rke2-agent rke2-common rke2-selinux > /dev/null 2>&1 || fatal "packages didn't install"
-  systemctl enable --now rke2-agent.service > /dev/null 2>&1 || fatal "rke2-agent didn't start"
+  yum install -y rke2-agent rke2-common rke2-selinux >/dev/null 2>&1 || fatal "packages didn't install"
+  systemctl enable --now rke2-agent.service >/dev/null 2>&1 || fatal "rke2-agent didn't start"
   info "worker node running"
 }
 
 ################################# longhorn ################################
-function longhorn () {
+function longhorn() {
   # deploy longhorn with local helm/images
   info "deploying longhorn"
-    helm upgrade -i longhorn oci://$serverIp:5000/hauler/longhorn --namespace longhorn-system --create-namespace --set ingress.enabled=true --set ingress.host=longhorn.$DOMAIN --set global.cattle.systemDefaultRegistry=$serverIp:5000 --plain-http
+  helm upgrade -i longhorn oci://$serverIp:5000/hauler/longhorn --namespace longhorn-system --create-namespace --set ingress.enabled=true --set ingress.host=longhorn.$DOMAIN --set global.cattle.systemDefaultRegistry=$serverIp:5000 --plain-http
 }
 
 ################################# neuvector ################################
-function neuvector () {
+function neuvector() {
   # deploy neuvector with local helm/images
   info "deploying neuvector"
-  helm upgrade -i neuvector --namespace neuvector oci://$serverIp:5000/hauler/core --create-namespace  --set k3s.enabled=true --set k3s.runtimePath=/run/k3s/containerd/containerd.sock  --set manager.ingress.enabled=true --set controller.pvc.enabled=true --set manager.svc.type=ClusterIP --set controller.pvc.capacity=500Mi --set registry=$serverIp:5000 --set controller.image.repository=neuvector/controller --set enforcer.image.repository=neuvector/enforcer --set manager.image.repository=neuvector/manager --set cve.updater.image.repository=neuvector/updater --set manager.ingress.host=neuvector.$DOMAIN --set internal.certmanager.enabled=true --plain-http
+  helm upgrade -i neuvector --namespace neuvector oci://$serverIp:5000/hauler/core --create-namespace --set k3s.enabled=true --set k3s.runtimePath=/run/k3s/containerd/containerd.sock --set manager.ingress.enabled=true --set controller.pvc.enabled=true --set manager.svc.type=ClusterIP --set controller.pvc.capacity=500Mi --set registry=$serverIp:5000 --set controller.image.repository=neuvector/controller --set enforcer.image.repository=neuvector/enforcer --set manager.image.repository=neuvector/manager --set cve.updater.image.repository=neuvector/updater --set manager.ingress.host=neuvector.$DOMAIN --set internal.certmanager.enabled=true --plain-http
 }
 
 ################################# rancher ################################
-function rancher () {
+function rancher() {
   # deploy rancher with local helm/images
   info "deploying cert-manager"
-  helm upgrade -i cert-manager oci://$serverIp:5000/hauler/cert-manager --version $(curl -sfL http://$serverIp:8080/_hauler_index.txt | grep hauler/cert | awk '{print $2}'| awk -F: '{print $2}') --namespace cert-manager --create-namespace --set installCRDs=true --set image.repository=$serverIp:5000/jetstack/cert-manager-controller --set webhook.image.repository=$serverIp:5000/jetstack/cert-manager-webhook --set cainjector.image.repository=$serverIp:5000/jetstack/cert-manager-cainjector --set startupapicheck.image.repository=$serverIp:5000/jetstack/cert-manager-startupapicheck --plain-http
+  helm upgrade -i cert-manager oci://$serverIp:5000/hauler/cert-manager --version $(curl -sfL http://$serverIp:8080/_hauler_index.txt | grep hauler/cert | awk '{print $2}' | awk -F: '{print $2}') --namespace cert-manager --create-namespace --set installCRDs=true --set image.repository=$serverIp:5000/jetstack/cert-manager-controller --set webhook.image.repository=$serverIp:5000/jetstack/cert-manager-webhook --set cainjector.image.repository=$serverIp:5000/jetstack/cert-manager-cainjector --set startupapicheck.image.repository=$serverIp:5000/jetstack/cert-manager-startupapicheck --plain-http
 
   info "deploying rancher"
   helm upgrade -i rancher oci://$serverIp:5000/hauler/rancher --namespace cattle-system --create-namespace --set bootstrapPassword=bootStrapAllTheThings --set replicas=1 --set auditLog.level=2 --set auditLog.destination=hostPath --set useBundledSystemChart=true --set rancherImage=$serverIp:5000/rancher/rancher --set systemDefaultRegistry=$serverIp:5000 --set hostname=rancher.$DOMAIN --plain-http
@@ -471,13 +494,13 @@ function rancher () {
 }
 
 ################################# validate ################################
-function validate () {
+function validate() {
   info "showing all images"
-  kubectl get pods -A -o jsonpath="{.items[*].spec.containers[*].image}" | tr -s '[[:space:]]' '\n' |sort | uniq -c
+  kubectl get pods -A -o jsonpath="{.items[*].spec.containers[*].image}" | tr -s '[[:space:]]' '\n' | sort | uniq -c
 }
 
 ############################# usage ################################
-function usage () {
+function usage() {
   echo ""
   echo "-------------------------------------------------"
   echo ""
@@ -502,10 +525,11 @@ function usage () {
   echo ""
   echo " - Build 3 vms with 4cpu and 8gb of ram"
   echo -e "   - On 1st node run, as $RED"root$NO_COLOR:"
-  echo -e "     -$BLUE mkdir /opt/hauler && tar -I zstd -vxf hauler_airgap_$(date '+%m_%d_%y').zst -C /opt/hauler"$NO_COLOR
-  echo -e "     -$BLUE cd /opt/hauler; $0 control"$NO_COLOR
+  echo -e " -$BLUE mkdir /opt/hauler && tar -I zstd -vxf hauler_airgap_$(date '+%m_%d_%y').zst -C /opt/hauler"$NO_COLOR
+  echo -e " -$BLUE cd /opt/hauler
+  $0 control"$NO_COLOR
   echo ""
-  echo -e "   - On 2nd, and 3rd nodes run, as $RED"root$NO_COLOR:"
+  echo -e " - On 2nd, and 3rd nodes run, as $RED"root$NO_COLOR:"
   echo -e "      -$BLUE curl -sfL http://$serverIp:8080/rke-setup.sh | bash -s -- worker $serverIp "$NO_COLOR
   echo ""
   echo " - Application Setup from 1st node install"
@@ -519,14 +543,14 @@ function usage () {
 }
 
 case "$1" in
-        build ) build;;
-        control) deploy_control;;
-        worker) deploy_worker;;
-        serve) hauler_setup;;
-        neuvector) neuvector;;
-        longhorn) longhorn;;
-        rancher) rancher;;
-        flask) flask;;
-        validate) validate;;
-        *) usage;;
+build) build ;;
+control) deploy_control ;;
+worker) deploy_worker ;;
+serve) hauler_setup ;;
+neuvector) neuvector ;;
+longhorn) longhorn ;;
+rancher) rancher ;;
+flask) flask ;;
+validate) validate ;;
+*) usage ;;
 esac
