@@ -25,6 +25,7 @@ export YELLOW='\x1b[33m'
 export NO_COLOR='\033[0m'
 export RED='\033[1;31m'
 echo -e "I ${RED}love${NO_COLOR} Stack Overflow"
+echo -e "${GREEN}ok-green-${NO_COLOR}"
 # set functions for debugging/logging
 function info {
   echo -e "${GREEN}[info]${NO_COLOR}$1"
@@ -37,7 +38,7 @@ function fatal {
   exit 1
 }
 function info_ok {
-  echo -e "${GREEN}" "ok"
+  echo -e "${GREEN}ok${NO_COLOR}"
 }
 
 export PATH=$PATH:/usr/local/bin
@@ -65,9 +66,9 @@ fi
 #   exit 1
 #fi
 
-info_ok "DOMAIN=$DOMAIN"
-info_ok "server=$server"
-info_ok "CURR_USER=$(whoami)"
+info "DOMAIN=$DOMAIN"
+info "server=$server"
+info "CURR_USER=$(whoami)"
 
 function createAirGapHauler() {
   info "Executing createAirGapHauler"
@@ -169,7 +170,6 @@ function getSoftwareVersions() {
 
 function addHelmRepos() {
   info "Executing addHelmRepos"
-
   helm repo add jetstack https://charts.jetstack.io --force-update >/dev/null 2>&1
   helm repo add longhorn https://charts.longhorn.io --force-update >/dev/null 2>&1
   helm repo add neuvector https://neuvector.github.io/neuvector-helm/ --force-update >/dev/null 2>&1
