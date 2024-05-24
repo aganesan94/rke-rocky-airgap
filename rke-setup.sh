@@ -614,7 +614,7 @@ function usage() {
 
 case "$1" in
 build) build ;;
-#control) deploy_control ;;
+control) deploy_control ;;
 #worker) deploy_worker ;;
 serve) hauler_setup ;;
 #neuvector) neuvector ;;
