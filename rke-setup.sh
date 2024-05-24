@@ -132,7 +132,7 @@ function build() {
   info "NEU_VERSION=$NEU_VERSION"
 
   # temp dir
-  mkdir -p hauler_temp
+  mkdir -p tmp
 
   # repod
   helm repo add jetstack https://charts.jetstack.io --force-update >/dev/null 2>&1
@@ -144,32 +144,32 @@ function build() {
   cp $(pwd)/templates/airgap_hauler.yaml $(pwd)/
 
   # Modify the airgap_hauler.yaml
-  for i in $(helm template jetstack/cert-manager --version $CERT_VERSION | awk '$1 ~ /image:/ {print $2}' | sed 's/\"//g'); do echo "    - name: "$i >>airgap_hauler.yaml; done
+  for i in $(helm template jetstack/cert-manager --version $CERT_VERSION | awk '$1 ~ /image:/ {print $2}' | sed 's/\"//g'); do echo "\n    - name: "$i >>airgap_hauler.yaml; done
   for i in $(helm template neuvector/core --version $NEU_VERSION | awk '$1 ~ /image:/ {print $2}' | sed -e 's/\"//g'); do echo "    - name: "$i >>airgap_hauler.yaml; done
   for i in $(curl -sL https://github.com/longhorn/longhorn/releases/download/$LONGHORN_VERSION/longhorn-images.txt); do echo "    - name: "$i >>airgap_hauler.yaml; done
   for i in $(curl -sL https://github.com/rancher/rke2/releases/download/v$RKE_VERSION%2Brke2r1/rke2-images-all.linux-amd64.txt | grep -v "sriov\|cilium\|vsphere"); do echo "    - name: "$i >>airgap_hauler.yaml; done
-  #
-  #  curl -sL https://github.com/rancher/rancher/releases/download/$RANCHER_VERSION/rancher-images.txt -o hauler_temp/orig-rancher-images.txt
-  #  sed -E '/neuvector|minio|gke|aks|eks|sriov|harvester|mirrored|longhorn|thanos|tekton|istio|hyper|jenkins|windows/d' hauler_temp/orig-rancher-images.txt > hauler_temp/cleaned-rancher-images.txt
+
+  #  curl -sL https://github.com/rancher/rancher/releases/download/$RANCHER_VERSION/rancher-images.txt -o tmp/orig-rancher-images.txt
+  #  sed -E '/neuvector|minio|gke|aks|eks|sriov|harvester|mirrored|longhorn|thanos|tekton|istio|hyper|jenkins|windows/d' tmp/orig-rancher-images.txt > tmp/cleaned-rancher-images.txt
   #
   #  # capi fixes
-  #  grep cluster-api hauler_temp/orig-rancher-images.txt >> hauler_temp/cleaned-rancher-images.txt
-  #  grep kubectl hauler_temp/orig-rancher-images.txt >> hauler_temp/cleaned-rancher-images.txt
+  #  grep cluster-api tmp/orig-rancher-images.txt >> tmp/cleaned-rancher-images.txt
+  #  grep kubectl tmp/orig-rancher-images.txt >> tmp/cleaned-rancher-images.txt
   #
   #  # get latest version
-  #  for i in $(cat hauler_temp/cleaned-rancher-images.txt|awk -F: '{print $1}'); do
-  #    grep -w "$i" hauler_temp/cleaned-rancher-images.txt | sort -Vr| head -1 >> hauler_temp/rancher-unsorted.txt
+  #  for i in $(cat tmp/cleaned-rancher-images.txt|awk -F: '{print $1}'); do
+  #    grep -w "$i" tmp/cleaned-rancher-images.txt | sort -Vr| head -1 >> tmp/rancher-unsorted.txt
   #  done
   #
   #  # final sort
-  #  sort -u hauler_temp/rancher-unsorted.txt > hauler_temp/rancher-images.txt
+  #  sort -u tmp/rancher-unsorted.txt > tmp/rancher-images.txt
   #
   #  # kubectl fix
-  #  echo "rancher/kubectl:v1.20.2" >> hauler_temp/rancher-images.txt
+  #  echo "rancher/kubectl:v1.20.2" >> tmp/rancher-images.txt
   #
-  #  for i in $(cat hauler_temp/rancher-images.txt); do echo "    - name: "$i >> airgap_hauler.yaml; done
+  #  for i in $(cat tmp/rancher-images.txt); do echo "    - name: "$i >> airgap_hauler.yaml; done
   #
-  #  rm -rf hauler_temp
+  #  rm -rf tmp
   #
   #cat << EOF >> airgap_hauler.yaml
   #---
