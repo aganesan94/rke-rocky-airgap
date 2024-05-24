@@ -153,12 +153,12 @@ function preRequisites() {
 function getSoftwareVersions() {
   info "Executing getSoftwareVersions"
 
-#  export RKE_VERSION=$(curl -s https://update.rke2.io/v1-release/channels | jq -r '.data[] | select(.id=="stable") | .latest' | awk -F"+" '{print $1}' | sed 's/v//')
-#  export CERT_VERSION=$(curl -s https://api.github.com/repos/cert-manager/cert-manager/releases/latest | jq -r .tag_name)
-#  export RANCHER_VERSION=$(curl -s https://api.github.com/repos/rancher/rancher/releases/latest | jq -r .tag_name)
-#  # possible curl -s https://update.rancher.io/v1-release/channels | jq -r '.data[] | select(.id=="latest") .latest' | awk -F"+" '{print $1}'| sed 's/v//'
-#  export LONGHORN_VERSION=$(curl -s https://api.github.com/repos/longhorn/longhorn/releases/latest | jq -r .tag_name)
-#  export NEU_VERSION=$(curl -s https://api.github.com/repos/neuvector/neuvector-helm/releases/latest | jq -r .tag_name)
+  #  export RKE_VERSION=$(curl -s https://update.rke2.io/v1-release/channels | jq -r '.data[] | select(.id=="stable") | .latest' | awk -F"+" '{print $1}' | sed 's/v//')
+  #  export CERT_VERSION=$(curl -s https://api.github.com/repos/cert-manager/cert-manager/releases/latest | jq -r .tag_name)
+  #  export RANCHER_VERSION=$(curl -s https://api.github.com/repos/rancher/rancher/releases/latest | jq -r .tag_name)
+  #  # possible curl -s https://update.rancher.io/v1-release/channels | jq -r '.data[] | select(.id=="latest") .latest' | awk -F"+" '{print $1}'| sed 's/v//'
+  #  export LONGHORN_VERSION=$(curl -s https://api.github.com/repos/longhorn/longhorn/releases/latest | jq -r .tag_name)
+  #  export NEU_VERSION=$(curl -s https://api.github.com/repos/neuvector/neuvector-helm/releases/latest | jq -r .tag_name)
 
   export RKE_VERSION="1.28.9"
   export CERT_VERSION="v1.14.5"
@@ -270,26 +270,26 @@ EOF
   info "cat airgap_hauler.yaml | yq"
   cat airgap_hauler.yaml | yq
 
-  #  warn "- hauler store sync - will take some time..."
-  #  hauler store sync -f /opt/hauler/airgap_hauler.yaml || { fatal "hauler failed to sync - check airgap_hauler.yaml for errors"; }
-  #  echo -n "  - synced"
-  #  info_ok
-  #
-  #  # copy hauler binary
-  #  rsync -avP /usr/local/bin/hauler /opt/hauler/hauler >/dev/null 2>&1
-  #
-  #  warn "- compressing all the things - will take a minute"
-  #  tar -I zstd -cf /opt/hauler_airgap_$(date '+%m_%d_%y').zst $(ls) >/dev/null 2>&1
-  #  echo -n "  - created /opt/hauler_airgap_$(date '+%m_%d_%y').zst "
-  #  info_ok
-  #
-  #  echo -e "---------------------------------------------------------------------------"
-  #  echo -e $BLUE"    move file to other network..."
-  #  echo -e $YELLOW"    then uncompress with : "$NO_COLOR
-  #  echo -e "      mkdir /opt/hauler && yum install -y zstd"
-  #  echo -e "      tar -I zstd -vxf hauler_airgap_$(date '+%m_%d_%y').zst -C /opt/hauler"
-  #  echo -e "      $0 control"
-  #  echo -e "---------------------------------------------------------------------------"
+  warn "- hauler store sync - will take some time..."
+  hauler store sync -f /opt/hauler/airgap_hauler.yaml || { fatal "hauler failed to sync - check airgap_hauler.yaml for errors"; }
+  echo -n "  - synced"
+  info_ok
+
+  # copy hauler binary
+  rsync -avP /usr/local/bin/hauler /opt/hauler/hauler >/dev/null 2>&1
+
+  warn "- compressing all the things - will take a minute"
+  tar -I zstd -cf /opt/hauler_airgap_$(date '+%m_%d_%y').zst $(ls) >/dev/null 2>&1
+  echo -n "  - created /opt/hauler_airgap_$(date '+%m_%d_%y').zst "
+  info_ok
+
+  echo -e "---------------------------------------------------------------------------"
+  echo -e $BLUE"    move file to other network..."
+  echo -e $YELLOW"    then uncompress with : "$NO_COLOR
+  echo -e "      mkdir /opt/hauler && yum install -y zstd"
+  echo -e "      tar -I zstd -vxf hauler_airgap_$(date '+%m_%d_%y').zst -C /opt/hauler"
+  echo -e "      $0 control"
+  echo -e "---------------------------------------------------------------------------"
 
 }
 
