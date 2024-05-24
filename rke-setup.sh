@@ -18,17 +18,13 @@ export server=$2
 
 ######  NO MOAR EDITS #######
 # color
-export RED='\x1b[0;31m'
+export RED='\033[1;31m'
 export GREEN='\x1b[32m'
 export BLUE='\x1b[34m'
 export YELLOW='\x1b[33m'
-export NO_COLOR='\x1b[0m'
+export NO_COLOR='\033[0m'
 export RED='\033[1;31m'
-
-RED='\033[1;31m'
-NC='\033[0m' # No Color
-echo -e "I ${RED}love${NC} Stack Overflow"
-
+echo -e "I ${RED}love${NO_COLOR} Stack Overflow"
 # set functions for debugging/logging
 function info {
   echo -e "${GREEN}[info] $1"
