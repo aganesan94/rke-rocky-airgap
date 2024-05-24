@@ -51,7 +51,7 @@ if which rpm >/dev/null 2>&1; then export EL=${EL_ver:-$(rpm -q --queryformat '%
 
 # Fetch hostname from server
 #if [ "$1" != "build" ] && [ $(uname) != "Darwin" ]; then export serverIp=${server:-$(hostname -I | awk '{ print $1 }')}; fi
-if [ "$1" != "build" ] && [ $(uname) != "Darwin" ]; then export serverIp=${server.$DOMAIN}; fi
+if [ "$1" != "build" ] && [ $(uname) != "Darwin" ]; then export serverIp=${server}.${DOMAIN}; fi
 
 # To ensure it is run as root
 if [ $(whoami) != "root" ] && ([ "$1" = "control" ] || [ "$1" = "worker" ] || [ "$1" = "serve" ] || [ "$1" = "neuvector" ] || [ "$1" = "longhorn" ] || [ "$1" = "rancher" ] || [ "$1" = "validate" ] || [ "$1" = "flask" ]); then fatal "please run $0 as root"; fi
