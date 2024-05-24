@@ -185,8 +185,8 @@ function build() {
   addHelmRepos
   createAirGapHauler
 
-  #  curl -sL https://github.com/rancher/rancher/releases/download/$RANCHER_VERSION/rancher-images.txt -o tmp/orig-rancher-images.txt
-  #  sed -E '/neuvector|minio|gke|aks|eks|sriov|harvester|mirrored|longhorn|thanos|tekton|istio|hyper|jenkins|windows/d' tmp/orig-rancher-images.txt > tmp/cleaned-rancher-images.txt
+  curl -sL https://github.com/rancher/rancher/releases/download/$RANCHER_VERSION/rancher-images.txt -o tmp/orig-rancher-images.txt
+  sed -E '/neuvector|minio|gke|aks|eks|sriov|harvester|mirrored|longhorn|thanos|tekton|istio|hyper|jenkins|windows/d' tmp/orig-rancher-images.txt >tmp/cleaned-rancher-images.txt
   #
   #  # capi fixes
   #  grep cluster-api tmp/orig-rancher-images.txt >> tmp/cleaned-rancher-images.txt
