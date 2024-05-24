@@ -10,7 +10,7 @@
 set -ebpf
 
 # application domain name
-export DOMAIN=awesome.sauce
+export DOMAIN=techin48.com
 # set server Ip here or from the command line
 export server=$2
 
