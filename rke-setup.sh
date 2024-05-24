@@ -25,7 +25,7 @@ export YELLOW='\x1b[33m'
 export NO_COLOR='\x1b[0m'
 export RED='\033[1;31m'
 
-RED='\033[0;31m'
+RED='\033[1;31m'
 NC='\033[0m' # No Color
 echo -e "I ${RED}love${NC} Stack Overflow"
 
