@@ -67,21 +67,21 @@ function build() {
   echo -e -n "checking rsync "
   command -v rsync >/dev/null 2>&1 || {
     echo -e -n "$RED" " ** rsync not found ** ""$NO_COLOR"
-#    yum install rsync -y >/dev/null 2>&1
+    #    yum install rsync -y >/dev/null 2>&1
   }
   info_ok
 
   echo -e -n "checking zstd "
   command -v zstd >/dev/null 2>&1 || {
     echo -e -n "$RED" " ** zstd not found ** ""$NO_COLOR"
-#    yum install zstd -y >/dev/null 2>&1
+    #    yum install zstd -y >/dev/null 2>&1
   }
   info_ok
 
   echo -e -n "checking helm "
   command -v helm >/dev/null 2>&1 || {
     echo -e -n "$RED" " ** helm was not found ** ""$NO_COLOR"
-#    curl -s https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash >/dev/null 2>&1
+    #    curl -s https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash >/dev/null 2>&1
   }
   info_ok
 
@@ -89,7 +89,7 @@ function build() {
   echo -e -n "checking hauler "
   command -v hauler >/dev/null 2>&1 || {
     echo -e -n "$RED" " ** hauler was not found ** ""$NO_COLOR"
-#    curl -sfL https://get.hauler.dev | bash >/dev/null 2>&1
+    #    curl -sfL https://get.hauler.dev | bash >/dev/null 2>&1
   }
   info_ok
 
@@ -97,49 +97,36 @@ function build() {
   echo -e -n "checking jq "
   command -v jq >/dev/null 2>&1 || {
     echo -e -n "$RED" " ** jq was not found ** ""$NO_COLOR"
-#    yum install epel-release -y >/dev/null 2>&1
-#    yum install -y jq >/dev/null 2>&1
+    #    yum install epel-release -y >/dev/null 2>&1
+    #    yum install -y jq >/dev/null 2>&1
   }
   info_ok
 
-    cd /opt/hauler
-    info "creating hauler manifest"
+  # versions
+  export RKE_VERSION=$(curl -s https://update.rke2.io/v1-release/channels | jq -r '.data[] | select(.id=="stable") | .latest' | awk -F"+" '{print $1}' | sed 's/v//')
+  export CERT_VERSION=$(curl -s https://api.github.com/repos/cert-manager/cert-manager/releases/latest | jq -r .tag_name)
+  export RANCHER_VERSION=$(curl -s https://api.github.com/repos/rancher/rancher/releases/latest | jq -r .tag_name)
+  # possible curl -s https://update.rancher.io/v1-release/channels | jq -r '.data[] | select(.id=="latest") .latest' | awk -F"+" '{print $1}'| sed 's/v//'
+  export LONGHORN_VERSION=$(curl -s https://api.github.com/repos/longhorn/longhorn/releases/latest | jq -r .tag_name)
+  export NEU_VERSION=$(curl -s https://api.github.com/repos/neuvector/neuvector-helm/releases/latest | jq -r .tag_name)
 
-    # versions
-    export RKE_VERSION=$(curl -s https://update.rke2.io/v1-release/channels | jq -r '.data[] | select(.id=="stable") | .latest' | awk -F"+" '{print $1}'| sed 's/v//')
-    export CERT_VERSION=$(curl -s https://api.github.com/repos/cert-manager/cert-manager/releases/latest | jq -r .tag_name)
-    export RANCHER_VERSION=$(curl -s https://api.github.com/repos/rancher/rancher/releases/latest | jq -r .tag_name)
-      # possible curl -s https://update.rancher.io/v1-release/channels | jq -r '.data[] | select(.id=="latest") .latest' | awk -F"+" '{print $1}'| sed 's/v//'
-    export LONGHORN_VERSION=$(curl -s https://api.github.com/repos/longhorn/longhorn/releases/latest | jq -r .tag_name)
-    export NEU_VERSION=$(curl -s https://api.github.com/repos/neuvector/neuvector-helm/releases/latest | jq -r .tag_name)
+  info "RKE_VERSION=$RKE_VERSION"
+  info "CERT_VERSION=$CERT_VERSION"
+  info "RANCHER_VERSION=$RANCHER_VERSION"
+  info "LONGHORN_VERSION=$LONGHORN_VERSION"
+  info "NEU_VERSION=$NEU_VERSION"
 
-    info "RKE_VERSION=$RKE_VERSION"
-    info "CERT_VERSION=$CERT_VERSION"
-    info "RANCHER_VERSION=$RANCHER_VERSION"
-    info "LONGHORN_VERSION=$LONGHORN_VERSION"
-    info "NEU_VERSION=$NEU_VERSION"
+  # temp dir
+  mkdir -p hauler_temp
 
-    # temp dir
-    mkdir -p hauler_temp
+  # repod
+  helm repo add jetstack https://charts.jetstack.io --force-update >/dev/null 2>&1
+  helm repo add longhorn https://charts.longhorn.io --force-update >/dev/null 2>&1
+  helm repo add neuvector https://neuvector.github.io/neuvector-helm/ --force-update >/dev/null 2>&1
 
-    # repod
-    helm repo add jetstack https://charts.jetstack.io --force-update > /dev/null 2>&1
-    helm repo add longhorn https://charts.longhorn.io --force-update> /dev/null 2>&1
-    helm repo add neuvector https://neuvector.github.io/neuvector-helm/ --force-update> /dev/null 2>&1
-
-    # images
-  cat << EOF > airgap_hauler.yaml
-  apiVersion: content.hauler.cattle.io/v1alpha1
-  kind: Images
-  metadata:
-    name: rancher-images
-    annotations:
-    # hauler.dev/key: <cosign public key>
-      hauler.dev/platform: linux/amd64
-    # hauler.dev/registry: <registry>
-  spec:
-    images:
-  EOF
+  # images
+  info "cp $(pwd)/templates/airgap_hauler.yaml $(pwd)/"
+  cp $(pwd)/templates/airgap_hauler.yaml $(pwd)/
 
   #  for i in $(helm template jetstack/cert-manager --version $CERT_VERSION | awk '$1 ~ /image:/ {print $2}' | sed 's/\"//g'); do echo "    - name: "$i >> airgap_hauler.yaml; done
   #  for i in $(helm template neuvector/core --version $NEU_VERSION | awk '$1 ~ /image:/ {print $2}' | sed -e 's/\"//g'); do echo "    - name: "$i >> airgap_hauler.yaml; done
@@ -547,13 +534,13 @@ function usage() {
 
 case "$1" in
 build) build ;;
-control) deploy_control ;;
-worker) deploy_worker ;;
-serve) hauler_setup ;;
-neuvector) neuvector ;;
-longhorn) longhorn ;;
-rancher) rancher ;;
-flask) flask ;;
-validate) validate ;;
+#control) deploy_control ;;
+#worker) deploy_worker ;;
+#serve) hauler_setup ;;
+#neuvector) neuvector ;;
+#longhorn) longhorn ;;
+#rancher) rancher ;;
+#flask) flask ;;
+#validate) validate ;;
 *) usage ;;
 esac

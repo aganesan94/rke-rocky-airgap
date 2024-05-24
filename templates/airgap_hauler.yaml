@@ -1,0 +1,10 @@
+ apiVersion: content.hauler.cattle.io/v1alpha1
+ kind: Images
+ metadata:
+   name: rancher-images
+   annotations:
+   # hauler.dev/key: <cosign public key>
+     hauler.dev/platform: linux/amd64
+   # hauler.dev/registry: <registry>
+ spec:
+   images:
