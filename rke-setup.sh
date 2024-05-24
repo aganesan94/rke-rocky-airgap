@@ -27,7 +27,7 @@ export RED='\033[1;31m'
 echo -e "I ${RED}love${NO_COLOR} Stack Overflow"
 # set functions for debugging/logging
 function info {
-  echo -e "${GREEN}[info] $1"
+  echo -e "${GREEN}[info]${NO_COLOR}$1"
 }
 function warn {
   echo -e "${YELLOW}[warn]$1"
@@ -65,9 +65,9 @@ fi
 #   exit 1
 #fi
 
-echo "$(date)-$FILE_NAME: DOMAIN=$DOMAIN"
-echo "$(date)-$FILE_NAME: server=$server"
-echo "$(date)-$FILE_NAME: CURR_USER=$(whoami)"
+info_ok "DOMAIN=$DOMAIN"
+info_ok "server=$server"
+info_ok "CURR_USER=$(whoami)"
 
 function createAirGapHauler() {
   info "Executing createAirGapHauler"
