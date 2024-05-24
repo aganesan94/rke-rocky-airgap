@@ -14,7 +14,7 @@ FILE_NAME=rke-setup.sh
 # application domain name
 export DOMAIN=techin48.com
 # set server Ip here or from the command line
-export server=$2
+export server=$(hostname)
 
 ######  NO MOAR EDITS #######
 # color
