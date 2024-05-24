@@ -45,6 +45,9 @@ if [ "$1" != "build" ] && [ $(uname) != "Darwin" ]; then export serverIp=${serve
 # To ensure it is run as root
 if [ $(whoami) != "root" ] && ([ "$1" = "control" ] || [ "$1" = "worker" ] || [ "$1" = "serve" ] || [ "$1" = "neuvector" ] || [ "$1" = "longhorn" ] || [ "$1" = "rancher" ] || [ "$1" = "validate" ] || [ "$1" = "flask" ]); then fatal "please run $0 as root"; fi
 
+# tmp dir
+mkdir -p tmp
+
 if [[ -z $DOMAIN ]]; then
   echo "$(date)-$FILE_NAME: Please specify a DOMAIN, refer variable"
   exit 1
@@ -59,9 +62,29 @@ echo "$(date)-$FILE_NAME: DOMAIN=$DOMAIN"
 echo "$(date)-$FILE_NAME: server=$server"
 echo "$(date)-$FILE_NAME: CURR_USER=$(whoami)"
 
-################################# build ################################
-function build() {
+function createAirGapHauler() {
+  # images
+  info "cp $(pwd)/templates/airgap_hauler.yaml $(pwd)/"
+  cp $(pwd)/templates/airgap_hauler.yaml $(pwd)/
 
+  # Modify the airgap_hauler.yaml
+  info "Fetching images from helm template cert-manager"
+  for i in $(helm template jetstack/cert-manager --version $CERT_VERSION | awk '$1 ~ /image:/ {print $2}' | sed 's/\"//g'); do printf "\n    - name: "$i >>airgap_hauler.yaml; done
+
+  info "Fetching images from helm template nevector"
+  for i in $(helm template neuvector/core --version $NEU_VERSION | awk '$1 ~ /image:/ {print $2}' | sed -e 's/\"//g'); do printf "\n    - name: "$i >>airgap_hauler.yaml; done
+
+  info "Fetching images from helm template longhorn"
+  for i in $(curl -sL https://github.com/longhorn/longhorn/releases/download/$LONGHORN_VERSION/longhorn-images.txt); do printf "\n    - name: "$i >>airgap_hauler.yaml; done
+
+  info "Fetching images from helm template rancher"
+  for i in $(curl -sL https://github.com/rancher/rke2/releases/download/v$RKE_VERSION%2Brke2r1/rke2-images-all.linux-amd64.txt | grep -v "sriov\|cilium\|vsphere"); do printf "\n    - name: "$i >>airgap_hauler.yaml; done
+
+  info "cat airgap_hauler.yaml | yq"
+  cat airgap_hauler.yaml | yq
+}
+
+function preRequisites() {
   info "checking for hauler / zstd / rsync / jq / helm"
 
   echo -e -n "checking rsync "
@@ -116,7 +139,9 @@ function build() {
       chmod +x /usr/bin/yq
   }
   info_ok
+}
 
+function getSoftwareVersions() {
   # versions
   export RKE_VERSION=$(curl -s https://update.rke2.io/v1-release/channels | jq -r '.data[] | select(.id=="stable") | .latest' | awk -F"+" '{print $1}' | sed 's/v//')
   export CERT_VERSION=$(curl -s https://api.github.com/repos/cert-manager/cert-manager/releases/latest | jq -r .tag_name)
@@ -130,24 +155,22 @@ function build() {
   info "RANCHER_VERSION=$RANCHER_VERSION"
   info "LONGHORN_VERSION=$LONGHORN_VERSION"
   info "NEU_VERSION=$NEU_VERSION"
+}
 
-  # temp dir
-  mkdir -p tmp
-
+function addHelmRepos() {
   # repod
   helm repo add jetstack https://charts.jetstack.io --force-update >/dev/null 2>&1
   helm repo add longhorn https://charts.longhorn.io --force-update >/dev/null 2>&1
   helm repo add neuvector https://neuvector.github.io/neuvector-helm/ --force-update >/dev/null 2>&1
+}
 
-  # images
-  info "cp $(pwd)/templates/airgap_hauler.yaml $(pwd)/"
-  cp $(pwd)/templates/airgap_hauler.yaml $(pwd)/
+################################# build ################################
+function build() {
 
-  # Modify the airgap_hauler.yaml
-  for i in $(helm template jetstack/cert-manager --version $CERT_VERSION | awk '$1 ~ /image:/ {print $2}' | sed 's/\"//g'); do printf "\n    - name: "$i >>airgap_hauler.yaml; done
-  for i in $(helm template neuvector/core --version $NEU_VERSION | awk '$1 ~ /image:/ {print $2}' | sed -e 's/\"//g'); do printf "\n    - name: "$i >>airgap_hauler.yaml; done
-  for i in $(curl -sL https://github.com/longhorn/longhorn/releases/download/$LONGHORN_VERSION/longhorn-images.txt); do printf "\n    - name: "$i >>airgap_hauler.yaml; done
-  for i in $(curl -sL https://github.com/rancher/rke2/releases/download/v$RKE_VERSION%2Brke2r1/rke2-images-all.linux-amd64.txt | grep -v "sriov\|cilium\|vsphere"); do printf "\n    - name: "$i >>airgap_hauler.yaml; done
+  preRequisites
+  getSoftwareVersions
+  addHelmRepos
+  createAirGapHauler
 
   #  curl -sL https://github.com/rancher/rancher/releases/download/$RANCHER_VERSION/rancher-images.txt -o tmp/orig-rancher-images.txt
   #  sed -E '/neuvector|minio|gke|aks|eks|sriov|harvester|mirrored|longhorn|thanos|tekton|istio|hyper|jenkins|windows/d' tmp/orig-rancher-images.txt > tmp/cleaned-rancher-images.txt
