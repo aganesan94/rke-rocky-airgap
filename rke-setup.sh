@@ -144,7 +144,7 @@ function build() {
   cp $(pwd)/templates/airgap_hauler.yaml $(pwd)/
 
   # Modify the airgap_hauler.yaml
-  for i in $(helm template jetstack/cert-manager --version $CERT_VERSION | awk '$1 ~ /image:/ {print $2}' | sed 's/\"//g'); do echo "\n    - name: "$i >>airgap_hauler.yaml; done
+  for i in $(helm template jetstack/cert-manager --version $CERT_VERSION | awk '$1 ~ /image:/ {print $2}' | sed 's/\"//g'); do printf "\n    - name: "$i >>airgap_hauler.yaml; done
   for i in $(helm template neuvector/core --version $NEU_VERSION | awk '$1 ~ /image:/ {print $2}' | sed -e 's/\"//g'); do echo "    - name: "$i >>airgap_hauler.yaml; done
   for i in $(curl -sL https://github.com/longhorn/longhorn/releases/download/$LONGHORN_VERSION/longhorn-images.txt); do echo "    - name: "$i >>airgap_hauler.yaml; done
   for i in $(curl -sL https://github.com/rancher/rke2/releases/download/v$RKE_VERSION%2Brke2r1/rke2-images-all.linux-amd64.txt | grep -v "sriov\|cilium\|vsphere"); do echo "    - name: "$i >>airgap_hauler.yaml; done
