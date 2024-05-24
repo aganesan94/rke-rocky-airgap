@@ -47,10 +47,10 @@ if [[ -z $DOMAIN ]]; then
    exit 1
 fi
 
-if [[ -z $server ]]; then
-  echo "$(date)-$FILE_NAME: Please specify a server, refer variable"
-   exit 1
-fi
+#if [[ -z $server ]]; then
+#  echo "$(date)-$FILE_NAME: Please specify a server, refer variable"
+#   exit 1
+#fi
 
 echo "$(date)-$FILE_NAME: DOMAIN=$DOMAIN"
 echo "$(date)-$FILE_NAME: server=$server"
