@@ -24,21 +24,23 @@ export BLUE='\033[1;94m'
 export YELLOW='\033[1;93m'
 export NO_COLOR='\033[0m'
 export RED='\033[1;31m'
-echo -e "I ${RED}love${NO_COLOR} Stack Overflow"
-echo -e "${GREEN}ok-green-${NO_COLOR}"
+
 # set functions for debugging/logging
 function info {
-  echo -e "${GREEN}[info]${NO_COLOR}$1"
+  echo -e "${GREEN}[INFO]: ${NO_COLOR}$1"
 }
+
 function warn {
-  echo -e "${YELLOW}[warn]$1"
+  echo -e "${YELLOW}[WARN]: $1"
 }
+
 function fatal {
-  echo -e "${RED}[error]$1"
+  echo -e "${RED}[ERROR]: $1"
   exit 1
 }
+
 function info_ok {
-  echo -e "${GREEN}ok${NO_COLOR}"
+  echo -e "${GREEN}: OK"
 }
 
 export PATH=$PATH:/usr/local/bin
