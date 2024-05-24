@@ -23,7 +23,7 @@ export GREEN='\x1b[32m'
 export BLUE='\x1b[34m'
 export YELLOW='\x1b[33m'
 export NO_COLOR='\x1b[0m'
-export RED='\033[1;31'
+export RED='\033[1;31m'
 
 # set functions for debugging/logging
 function info {
