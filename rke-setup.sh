@@ -71,17 +71,23 @@ function build() {
   }
   info_ok
 
+  echo -e -n "checking wget "
+  command -v wget >/dev/null 2>&1 || {
+    echo -e -n "$RED" " ** wget not found ** ""$NO_COLOR"
+    yum install wget -y >/dev/null 2>&1
+  }
+
   echo -e -n "checking zstd "
   command -v zstd >/dev/null 2>&1 || {
     echo -e -n "$RED" " ** zstd not found ** ""$NO_COLOR"
-    #    yum install zstd -y >/dev/null 2>&1
+    yum install zstd -y >/dev/null 2>&1
   }
   info_ok
 
   echo -e -n "checking helm "
   command -v helm >/dev/null 2>&1 || {
     echo -e -n "$RED" " ** helm was not found ** ""$NO_COLOR"
-    #    curl -s https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash >/dev/null 2>&1
+    curl -s https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash >/dev/null 2>&1
   }
   info_ok
 
@@ -89,7 +95,7 @@ function build() {
   echo -e -n "checking hauler "
   command -v hauler >/dev/null 2>&1 || {
     echo -e -n "$RED" " ** hauler was not found ** ""$NO_COLOR"
-    #    curl -sfL https://get.hauler.dev | bash >/dev/null 2>&1
+    curl -sfL https://get.hauler.dev | bash >/dev/null 2>&1
   }
   info_ok
 
@@ -97,8 +103,8 @@ function build() {
   echo -e -n "checking jq "
   command -v jq >/dev/null 2>&1 || {
     echo -e -n "$RED" " ** jq was not found ** ""$NO_COLOR"
-    #    yum install epel-release -y >/dev/null 2>&1
-    #    yum install -y jq >/dev/null 2>&1
+    yum install epel-release -y >/dev/null 2>&1
+    yum install -y jq >/dev/null 2>&1
   }
   info_ok
 
@@ -106,8 +112,8 @@ function build() {
   echo -e -n "checking yq "
   command -v yq >/dev/null 2>&1 || {
     echo -e -n "$RED" " ** yq was not found ** ""$NO_COLOR"
-    wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq &&\
-    chmod +x /usr/bin/yq
+    wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/bin/yq &&
+      chmod +x /usr/bin/yq
   }
   info_ok
 
