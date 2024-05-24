@@ -175,35 +175,38 @@ function addHelmRepos() {
 }
 
 function updateAirGapHaulerFromRancher() {
-    info "curl -sL https://github.com/rancher/rancher/releases/download/$RANCHER_VERSION/rancher-images.txt -o tmp/orig-rancher-images.txt"
-    curl -sL https://github.com/rancher/rancher/releases/download/$RANCHER_VERSION/rancher-images.txt -o tmp/orig-rancher-images.txt
+  info "curl -sL https://github.com/rancher/rancher/releases/download/$RANCHER_VERSION/rancher-images.txt -o tmp/orig-rancher-images.txt"
+  curl -sL https://github.com/rancher/rancher/releases/download/$RANCHER_VERSION/rancher-images.txt -o tmp/orig-rancher-images.txt
 
-    info "Removing entries"
-    info "sed -E '/neuvector|minio|gke|aks|eks|sriov|harvester|mirrored|longhorn|thanos|tekton|istio|hyper|jenkins|windows/d' tmp/orig-rancher-images.txt >tmp/cleaned-rancher-images.txt"
-    sed -E '/neuvector|minio|gke|aks|eks|sriov|harvester|mirrored|longhorn|thanos|tekton|istio|hyper|jenkins|windows/d' tmp/orig-rancher-images.txt >tmp/cleaned-rancher-images.txt
+  info "Removing entries"
+  info "sed -E '/neuvector|minio|gke|aks|eks|sriov|harvester|mirrored|longhorn|thanos|tekton|istio|hyper|jenkins|windows/d' tmp/orig-rancher-images.txt >tmp/cleaned-rancher-images.txt"
+  sed -E '/neuvector|minio|gke|aks|eks|sriov|harvester|mirrored|longhorn|thanos|tekton|istio|hyper|jenkins|windows/d' tmp/orig-rancher-images.txt >tmp/cleaned-rancher-images.txt
 
-      # capi fixes
-      info "grep cluster-api tmp/orig-rancher-images.txt"
-      grep cluster-api tmp/orig-rancher-images.txt >> tmp/cleaned-rancher-images.txt
-      info "-------------------------------------------------------"
+  # capi fixes
+  info "grep cluster-api tmp/orig-rancher-images.txt"
+  grep cluster-api tmp/orig-rancher-images.txt >>tmp/cleaned-rancher-images.txt
+  info "-------------------------------------------------------"
 
-      info "grep kubectl tmp/orig-rancher-images.txt >> tmp/cleaned-rancher-images.txt"
-      grep kubectl tmp/orig-rancher-images.txt >> tmp/cleaned-rancher-images.txt
-      info "-------------------------------------------------------"
+  info "grep kubectl tmp/orig-rancher-images.txt >> tmp/cleaned-rancher-images.txt"
+  grep kubectl tmp/orig-rancher-images.txt >>tmp/cleaned-rancher-images.txt
+  info "-------------------------------------------------------"
 
-      # get latest version
-      for i in $(cat tmp/cleaned-rancher-images.txt|awk -F: '{print $1}'); do
-        info "grep -w \"$i\" tmp/cleaned-rancher-images.txt | sort -Vr| head -1 >> tmp/rancher-unsorted.txt"
-        grep -w "$i" tmp/cleaned-rancher-images.txt | sort -Vr| head -1 >> tmp/rancher-unsorted.txt
-      done
+  # get latest version
+  for i in $(cat tmp/cleaned-rancher-images.txt | awk -F: '{print $1}'); do
+    info "grep -w \"$i\" tmp/cleaned-rancher-images.txt | sort -Vr| head -1 >> tmp/rancher-unsorted.txt"
+    grep -w "$i" tmp/cleaned-rancher-images.txt | sort -Vr | head -1 >>tmp/rancher-unsorted.txt
+  done
 
-      # final sort
-      sort -u tmp/rancher-unsorted.txt > tmp/rancher-images.txt
+  # final sort
+  sort -u tmp/rancher-unsorted.txt >tmp/rancher-images.txt
 
-      # kubectl fix
-      echo "rancher/kubectl:v1.20.2" >> tmp/rancher-images.txt
+  # kubectl fix
+  echo "rancher/kubectl:v1.20.2" >>tmp/rancher-images.txt
 
-      for i in $(cat tmp/rancher-images.txt); do printf "\n    - name: "$i >> airgap_hauler.yaml; done
+  for i in $(cat tmp/rancher-images.txt); do printf "\n    - name: "$i >>airgap_hauler.yaml; done
+
+  info "cat airgap_hauler.yaml | yq"
+  cat airgap_hauler.yaml | yq
 }
 
 ################################# build ################################
@@ -216,7 +219,6 @@ function build() {
   addHelmRepos
   createAirGapHauler
   updateAirGapHaulerFromRancher
-
 
   #
   #  rm -rf tmp
