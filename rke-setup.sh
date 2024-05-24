@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# mkdir /opt/hauler/; cd /opt/hauler; curl -#OL https://raw.githubusercontent.com/clemenko/rke_airgap_install/main/hauler_all_the_things.sh && chmod 755 hauler_all_the_things.sh
+# mkdir /opt/hauler/; cd /opt/hauler; curl -#OL https://raw.githubusercontent.com/clemenko/rke_airgap_install/main/rke-setup.sh && chmod 755 rke-setup.sh
 
 # -----------
 # this script is designed to bootstrap a POC cluster using Hauler
@@ -157,7 +157,7 @@ spec:
     - path: https://github.com/rancher/rke2-packaging/releases/download/v$RKE_VERSION%2Brke2r1.stable.0/rke2-server-$RKE_VERSION.rke2r1-0.$EL.x86_64.rpm
     - path: https://github.com/rancher/rke2-selinux/releases/download/v0.17.stable.1/rke2-selinux-0.17-1.$EL.noarch.rpm
     - path: https://get.helm.sh/helm-$(curl -s https://api.github.com/repos/helm/helm/releases/latest | jq -r .tag_name)-linux-amd64.tar.gz
-    - path: https://raw.githubusercontent.com/clemenko/rke_airgap_install/main/hauler_all_the_things.sh
+    - path: https://raw.githubusercontent.com/clemenko/rke_airgap_install/main/rke-setup.sh
   # - path: https://download.rockylinux.org/pub/rocky/9/isos/x86_64/Rocky-9.3-x86_64-dvd.iso
 EOF
 
@@ -402,7 +402,7 @@ function deploy_control () {
   echo "------------------------------------------------------------------------------------"
   echo -e "  Run: $BLUE 'source ~/.bashrc' "$NO_COLOR
   echo "  Run on the worker nodes"
-  echo -e "  - '$BLUE curl -sfL http://$serverIp:8080/hauler_all_the_things.sh | bash -s -- worker $serverIp $NO_COLOR'"
+  echo -e "  - '$BLUE curl -sfL http://$serverIp:8080/rke-setup.sh | bash -s -- worker $serverIp $NO_COLOR'"
   echo "------------------------------------------------------------------------------------"
 }
 
@@ -488,7 +488,7 @@ function usage () {
   echo -e "     -$BLUE cd /opt/hauler; $0 control"$NO_COLOR
   echo ""
   echo -e "   - On 2nd, and 3rd nodes run, as $RED"root$NO_COLOR:"
-  echo -e "      -$BLUE curl -sfL http://$serverIp:8080/hauler_all_the_things.sh | bash -s -- worker $serverIp "$NO_COLOR
+  echo -e "      -$BLUE curl -sfL http://$serverIp:8080/rke-setup.sh | bash -s -- worker $serverIp "$NO_COLOR
   echo ""
   echo " - Application Setup from 1st node install"
   echo -e "   - Longhorn : $0$BLUE longhorn"$NO_COLOR
