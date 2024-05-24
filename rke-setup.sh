@@ -25,13 +25,13 @@ export YELLOW='\x1b[33m'
 export NO_COLOR='\x1b[0m'
 
 # set functions for debugging/logging
-function info { echo -e "$GREEN[info]$NO_COLOR $1"; }
-function warn { echo -e "$YELLOW[$(date)-$FILE_NAME: warn]$NO_COLOR $1"; }
+function info { echo -e "$GREEN[info] $1"; }
+function warn { echo -e "$YELLOW[$(date)-$FILE_NAME: warn]$1"; }
 function fatal {
-  echo -e "$RED[$(date)-$FILE_NAME: error]$NO_COLOR $1"
+  echo -e "$RED[$(date)-$FILE_NAME: error]$1"
   exit 1
 }
-function info_ok { echo -e "$GREEN" "ok" "$NO_COLOR"; }
+function info_ok { echo -e "$GREEN" "ok"; }
 
 export PATH=$PATH:/usr/local/bin
 
@@ -63,6 +63,8 @@ echo "$(date)-$FILE_NAME: server=$server"
 echo "$(date)-$FILE_NAME: CURR_USER=$(whoami)"
 
 function createAirGapHauler() {
+  info "Executing createAirGapHauler"
+
   # images
   info "cp $(pwd)/templates/airgap_hauler.yaml $(pwd)/"
   cp $(pwd)/templates/airgap_hauler.yaml $(pwd)/
@@ -85,7 +87,7 @@ function createAirGapHauler() {
 }
 
 function preRequisites() {
-  info "checking for hauler / zstd / rsync / jq / helm"
+  info "Executing preRequisites"
 
   echo -e -n "checking rsync "
   command -v rsync >/dev/null 2>&1 || {
@@ -142,7 +144,8 @@ function preRequisites() {
 }
 
 function getSoftwareVersions() {
-  # versions
+  info "Executing getSoftwareVersions"
+
   export RKE_VERSION=$(curl -s https://update.rke2.io/v1-release/channels | jq -r '.data[] | select(.id=="stable") | .latest' | awk -F"+" '{print $1}' | sed 's/v//')
   export CERT_VERSION=$(curl -s https://api.github.com/repos/cert-manager/cert-manager/releases/latest | jq -r .tag_name)
   export RANCHER_VERSION=$(curl -s https://api.github.com/repos/rancher/rancher/releases/latest | jq -r .tag_name)
@@ -158,7 +161,8 @@ function getSoftwareVersions() {
 }
 
 function addHelmRepos() {
-  # repod
+  info "Executing addHelmRepos"
+
   helm repo add jetstack https://charts.jetstack.io --force-update >/dev/null 2>&1
   helm repo add longhorn https://charts.longhorn.io --force-update >/dev/null 2>&1
   helm repo add neuvector https://neuvector.github.io/neuvector-helm/ --force-update >/dev/null 2>&1
