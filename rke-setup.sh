@@ -25,7 +25,7 @@ export YELLOW='\x1b[33m'
 export NO_COLOR='\x1b[0m'
 
 # set functions for debugging/logging
-function info { echo -e "$GREEN[$(date)-$FILE_NAME: info]$NO_COLOR $1"; }
+function info { echo -e "$GREEN[info]$NO_COLOR $1"; }
 function warn { echo -e "$YELLOW[$(date)-$FILE_NAME: warn]$NO_COLOR $1"; }
 function fatal {
   echo -e "$RED[$(date)-$FILE_NAME: error]$NO_COLOR $1"
