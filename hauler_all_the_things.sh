@@ -10,7 +10,7 @@
 set -ebpf
 
 # application domain name
-export DOMAIN=awesome.sauce
+export DOMAIN=techin48.com
 # set server Ip here or from the command line
 export server=$2
 
@@ -470,14 +470,37 @@ function deploy_worker() {
 function longhorn() {
   # deploy longhorn with local helm/images
   info "deploying longhorn"
-  helm upgrade -i longhorn oci://$serverIp:5000/hauler/longhorn --namespace longhorn-system --create-namespace --set ingress.enabled=true --set ingress.host=longhorn.$DOMAIN --set global.cattle.systemDefaultRegistry=$serverIp:5000 --plain-http
+  helm upgrade -i \
+  longhorn oci://$serverIp:5000/hauler/longhorn \
+  --namespace longhorn-system \
+  --create-namespace \
+  --set ingress.enabled=true \
+  --set ingress.host=longhorn.$DOMAIN \
+  --set global.cattle.systemDefaultRegistry=$serverIp:5000 \
+  --plain-http
 }
 
 ################################# neuvector ################################
 function neuvector() {
   # deploy neuvector with local helm/images
   info "deploying neuvector"
-  helm upgrade -i neuvector --namespace neuvector oci://$serverIp:5000/hauler/core --create-namespace --set k3s.enabled=true --set k3s.runtimePath=/run/k3s/containerd/containerd.sock --set manager.ingress.enabled=true --set controller.pvc.enabled=true --set manager.svc.type=ClusterIP --set controller.pvc.capacity=500Mi --set registry=$serverIp:5000 --set controller.image.repository=neuvector/controller --set enforcer.image.repository=neuvector/enforcer --set manager.image.repository=neuvector/manager --set cve.updater.image.repository=neuvector/updater --set manager.ingress.host=neuvector.$DOMAIN --set internal.certmanager.enabled=true --plain-http
+  helm upgrade -i \
+  neuvector \
+  --namespace neuvector \
+  oci://$serverIp:5000/hauler/core \
+  --create-namespace \
+  --set k3s.enabled=true \
+  --set k3s.runtimePath=/run/k3s/containerd/containerd.sock \
+  --set manager.ingress.enabled=true \
+  --set controller.pvc.enabled=true \
+  --set manager.svc.type=ClusterIP \
+  --set controller.pvc.capacity=500Mi \
+  --set registry=$serverIp:5000 \
+  --set controller.image.repository=neuvector/controller \
+  --set enforcer.image.repository=neuvector/enforcer \
+  --set manager.image.repository=neuvector/manager \
+  --set cve.updater.image.repository=neuvector/updater --set manager.ingress.host=neuvector.$DOMAIN \
+  --set internal.certmanager.enabled=true --plain-http
 }
 
 ################################# rancher ################################
@@ -487,7 +510,18 @@ function rancher() {
   helm upgrade -i cert-manager oci://$serverIp:5000/hauler/cert-manager --version $(curl -sfL http://$serverIp:8080/_hauler_index.txt | grep hauler/cert | awk '{print $2}' | awk -F: '{print $2}') --namespace cert-manager --create-namespace --set installCRDs=true --set image.repository=$serverIp:5000/jetstack/cert-manager-controller --set webhook.image.repository=$serverIp:5000/jetstack/cert-manager-webhook --set cainjector.image.repository=$serverIp:5000/jetstack/cert-manager-cainjector --set startupapicheck.image.repository=$serverIp:5000/jetstack/cert-manager-startupapicheck --plain-http
 
   info "deploying rancher"
-  helm upgrade -i rancher oci://$serverIp:5000/hauler/rancher --namespace cattle-system --create-namespace --set bootstrapPassword=bootStrapAllTheThings --set replicas=1 --set auditLog.level=2 --set auditLog.destination=hostPath --set useBundledSystemChart=true --set rancherImage=$serverIp:5000/rancher/rancher --set systemDefaultRegistry=$serverIp:5000 --set hostname=rancher.$DOMAIN --plain-http
+  helm upgrade -i \
+  rancher oci://$serverIp:5000/hauler/rancher \
+  --namespace cattle-system \
+  --create-namespace \
+  --set bootstrapPassword=bootStrapAllTheThings \
+  --set replicas=1 \
+  --set auditLog.level=2 \
+  --set auditLog.destination=hostPath \
+  --set useBundledSystemChart=true \
+  --set rancherImage=$serverIp:5000/rancher/rancher \
+  --set systemDefaultRegistry=$serverIp:5000 \
+  --set hostname=rancher.$DOMAIN --plain-http
 
   echo "   - bootstrap password = \"bootStrapAllTheThings\" "
 }
@@ -543,13 +577,13 @@ function usage() {
 
 case "$1" in
 build) build ;;
-#control) deploy_control ;;
-#worker) deploy_worker ;;
-#serve) hauler_setup ;;
-#neuvector) neuvector ;;
-#longhorn) longhorn ;;
-#rancher) rancher ;;
-#flask) flask ;;
-#validate) validate ;;
+control) deploy_control ;;
+worker) deploy_worker ;;
+serve) hauler_setup ;;
+neuvector) neuvector ;;
+longhorn) longhorn ;;
+rancher) rancher ;;
+flask) flask ;;
+validate) validate ;;
 *) usage ;;
 esac
