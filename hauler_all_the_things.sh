@@ -200,26 +200,26 @@ EOF
 info "cat airgap_hauler.yaml | yq"
 cat airgap_hauler.yaml | yq
 
-#  warn "- hauler store sync - will take some time..."
-#  hauler store sync -f /opt/hauler/airgap_hauler.yaml || { fatal "hauler failed to sync - check airgap_hauler.yaml for errors"; }
-#  echo -n "  - synced"
-#  info_ok
-#
-#  # copy hauler binary
-#  rsync -avP /usr/local/bin/hauler /opt/hauler/hauler >/dev/null 2>&1
-#
-#  warn "- compressing all the things - will take a minute"
-#  tar -I zstd -cf /opt/hauler_airgap_$(date '+%m_%d_%y').zst $(ls) >/dev/null 2>&1
-#  echo -n "  - created /opt/hauler_airgap_$(date '+%m_%d_%y').zst "
-#  info_ok
-#
-#  echo -e "---------------------------------------------------------------------------"
-#  echo -e $BLUE"    move file to other network..."
-#  echo -e $YELLOW"    then uncompress with : "$NO_COLOR
-#  echo -e "      mkdir /opt/hauler && yum install -y zstd"
-#  echo -e "      tar -I zstd -vxf hauler_airgap_$(date '+%m_%d_%y').zst -C /opt/hauler"
-#  echo -e "      $0 control"
-#  echo -e "---------------------------------------------------------------------------"
+  warn "- hauler store sync - will take some time..."
+  hauler store sync -f /opt/hauler/airgap_hauler.yaml || { fatal "hauler failed to sync - check airgap_hauler.yaml for errors"; }
+  echo -n "  - synced"
+  info_ok
+
+  # copy hauler binary
+  rsync -avP /usr/local/bin/hauler /opt/hauler/hauler >/dev/null 2>&1
+
+  warn "- compressing all the things - will take a minute"
+  tar -I zstd -cf /opt/hauler_airgap_$(date '+%m_%d_%y').zst $(ls) >/dev/null 2>&1
+  echo -n "  - created /opt/hauler_airgap_$(date '+%m_%d_%y').zst "
+  info_ok
+
+  echo -e "---------------------------------------------------------------------------"
+  echo -e $BLUE"    move file to other network..."
+  echo -e $YELLOW"    then uncompress with : "$NO_COLOR
+  echo -e "      mkdir /opt/hauler && yum install -y zstd"
+  echo -e "      tar -I zstd -vxf hauler_airgap_$(date '+%m_%d_%y').zst -C /opt/hauler"
+  echo -e "      $0 control"
+  echo -e "---------------------------------------------------------------------------"
 
 }
 
