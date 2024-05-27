@@ -104,24 +104,28 @@ function build() {
   # temp dir
   mkdir -p hauler_temp
 
-  # repod
-#  helm repo add jetstack https://charts.jetstack.io --force-update >/dev/null 2>&1
-#  helm repo add longhorn https://charts.longhorn.io --force-update >/dev/null 2>&1
-#  helm repo add neuvector https://neuvector.github.io/neuvector-helm/ --force-update >/dev/null 2>&1
-#
-#  # images
-#  cat <<EOF >airgap_hauler.yaml
-#apiVersion: content.hauler.cattle.io/v1alpha1
-#kind: Images
-#metadata:
-#  name: rancher-images
-#  annotations:
-#  # hauler.dev/key: <cosign public key>
-#    hauler.dev/platform: linux/amd64
-#  # hauler.dev/registry: <registry>
-#spec:
-#  images:
-#EOF
+#   repod
+  helm repo add jetstack https://charts.jetstack.io --force-update >/dev/null 2>&1
+  helm repo add longhorn https://charts.longhorn.io --force-update >/dev/null 2>&1
+  helm repo add neuvector https://neuvector.github.io/neuvector-helm/ --force-update >/dev/null 2>&1
+
+  # images
+  cat <<EOF >airgap_hauler.yaml
+apiVersion: content.hauler.cattle.io/v1alpha1
+kind: Images
+metadata:
+  name: rancher-images
+  annotations:
+  # hauler.dev/key: <cosign public key>
+    hauler.dev/platform: linux/amd64
+  # hauler.dev/registry: <registry>
+spec:
+  images:
+EOF
+
+info "cat airgap_hauler.yaml"
+cat airgap_hauler.yaml
+
 #
 #  for i in $(helm template jetstack/cert-manager --version $CERT_VERSION | awk '$1 ~ /image:/ {print $2}' | sed 's/\"//g'); do echo "    - name: "$i >>airgap_hauler.yaml; done
 #  for i in $(helm template neuvector/core --version $NEU_VERSION | awk '$1 ~ /image:/ {print $2}' | sed -e 's/\"//g'); do echo "    - name: "$i >>airgap_hauler.yaml; done
